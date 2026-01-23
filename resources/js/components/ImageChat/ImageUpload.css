@@ -1,0 +1,76 @@
+.image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+}
+
+.image-container svg{
+    cursor: pointer;
+}
+.add-image-bun {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+.image-preview-mess {
+    display: flex;
+    justify-content: center; /* Центрируем по горизонтали */
+    align-items: center; /* Центрируем по вертикали */
+    width: 100%;
+    max-width: 300px; /* Максимальная ширина превью */
+    margin: 0 auto; /* Автоматические отступы по бокам */
+    position: relative;
+}
+
+.image-preview-mess img {
+    position: relative;
+
+    width: 100%;
+
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+}
+
+.remove-image-bun {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4d4f;
+
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+}
+
+.remove-image-btn svg{
+    color: #e0e0e0;
+}
+.remove-image-btn:hover {
+    background: #ff7875;
+}
+
+.remove-image-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

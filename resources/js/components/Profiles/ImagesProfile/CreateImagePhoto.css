@@ -1,0 +1,20 @@
+.but-images{
+
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(5, 36, 59, 0.946);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 190px;
+}
+

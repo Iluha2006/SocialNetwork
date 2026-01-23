@@ -1,0 +1,27 @@
+:root {
+    /* Светлая тема (по умолчанию) */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --accent-color: #007bff;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #404040;
+    --accent-color: #4dabf7;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Применяем переменные к основным элементам */
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
