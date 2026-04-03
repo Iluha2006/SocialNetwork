@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+    class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use  HasApiTokens, HasFactory, Notifiable ;
 
     protected $fillable = [
         'name',
@@ -30,7 +32,18 @@ class User extends Authenticatable
         'online_status' => 'boolean',
     ];
 
+    public function oauthProviders(): HasMany
+    {
+        return $this->hasMany(OAuthProvider::class);
+    }
 
+
+    public function hasGoogleAccount(): bool
+    {
+        return $this->oauthProviders()
+            ->where('provider', 'google')
+            ->exists();
+    }
     public function profile()
     {
         return $this->hasOne(Profile::class);
@@ -43,7 +56,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(Carer::class);
     }
-
     public function posts()
     {
         return $this->hasMany(Post::class);
@@ -64,11 +76,17 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+
     public function image()
     {
         return $this->hasMany(ImageProfile::class);
     }
 
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\Auth\CustomVerifyEmail());
+    }
     public function imageBacround()
     {
         return $this->hasMany(ImagesBacround::class);

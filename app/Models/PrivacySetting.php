@@ -11,7 +11,6 @@ class PrivacySetting extends Model
         'profile_visibility',
         'friends_visible',
         'images_visible',
-        'visible_friends'
     ];
 
     public function user()

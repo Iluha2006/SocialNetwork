@@ -1,4 +1,4 @@
-import { sendOffer } from '../store/AudioMessage';
+import { sendOffer } from '../store/Files/AudioMessage';
 
 export const createOffer = async (peerConnectionRef, receiverId, userId, audioStream) => {
     try {

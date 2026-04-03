@@ -1,7 +1,12 @@
+
+import { clearAuth } from '../../store/Auth/UserStore';
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { register } from '../../store/UserStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useRegister } from '../../hooks/useRegister';
+import profileApi from '../../api/modules/profileApi';
+
+
+import { useDispatch } from 'react-redux';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,64 +16,63 @@ const Register = () => {
     password_confirmation: ''
   });
 
-  const [errors, setErrors] = useState({});
-  const dispatch = useDispatch();
-  const { loading } = useSelector(state => state.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { register, isLoading, errors, clearErrors } = useRegister();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
+    clearErrors();
+    dispatch(clearAuth());
 
-    try {
-      await dispatch(register(formData));
-      navigate('/home');
-    }
-    catch (err) {
-      if (err.response?.status === 422) {
-        setErrors(err.response.data.errors || {});
-      } else {
-        setErrors({
-          general: err.response?.data?.message || err.message || 'Произошла ошибка'
-        });
-      }
-      console.error('Registration failed:', err);
+    const result = await register(formData);
+    console.log('Registration result:', result);
+
+
+    if (result.success) {
+
+
+        setTimeout(() => {
+            dispatch(profileApi.endpoints.getProfile.initiate(result.data.user.id));
+        }, 500);
+      navigate('/home', { replace: true });
     }
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: null
-      });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors.validation?.[name] || errors.general?.message) {
+      clearErrors();
     }
   };
 
-  const renderError = (error) => {
-    if (Array.isArray(error)) {
-      return error.join(', ');
+  const renderError = () => {
+    if (errors.general?.message) {
+      return (
+        <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg text-red-700 text-sm">
+          {errors.general.message}
+        </div>
+      );
     }
-    return error;
+    if (errors.validation) {
+      return Object.entries(errors.validation).map(([field, messages]) => (
+        <div key={field} className="mb-2 text-red-500 text-sm">
+          {Array.isArray(messages) ? messages.join(', ') : messages}
+        </div>
+      ));
+    }
+    return null;
   };
 
   return (
-    <div className=" m-7 w-96 sm:w-full max-w-md mx-auto my-8 p-8 bg-[rgba(1,14,24,0.946)] border border-gray-700 rounded-lg shadow-lg">
+    <div className="m-7 w-96 sm:w-full max-w-md mx-auto my-8 p-8 bg-[rgba(1,14,24,0.946)] border border-gray-700 rounded-lg shadow-lg">
       <h2 className="text-2xl text-white text-center font-semibold mb-6">Регистрация</h2>
 
-      {errors.general && (
-        <div className="text-red-500 text-sm mb-4 p-3 bg-red-100 rounded-lg">
-          {renderError(errors.general)}
-        </div>
-      )}
+
+      {renderError()}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
         <div className="space-y-2">
           <label className="block text-white font-medium">Имя:</label>
           <input
@@ -77,15 +81,10 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors"
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50"
           />
-          {errors.name && (
-            <div className="text-red-500 text-sm">
-              {renderError(errors.name)}
-            </div>
-          )}
         </div>
-
 
         <div className="space-y-2">
           <label className="block text-white font-medium">Email:</label>
@@ -95,15 +94,10 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors"
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50"
           />
-          {errors.email && (
-            <div className="text-red-500 text-sm">
-              {renderError(errors.email)}
-            </div>
-          )}
         </div>
-
 
         <div className="space-y-2">
           <label className="block text-white font-medium">Пароль:</label>
@@ -113,15 +107,10 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors"
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50"
           />
-          {errors.password && (
-            <div className="text-red-500 text-sm">
-              {renderError(errors.password)}
-            </div>
-          )}
         </div>
-
 
         <div className="space-y-2">
           <label className="block text-white font-medium">Подтверждение пароля:</label>
@@ -131,30 +120,32 @@ const Register = () => {
             value={formData.password_confirmation}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors"
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50"
           />
-          {errors.password_confirmation && (
-            <div className="text-red-500 text-sm">
-              {renderError(errors.password_confirmation)}
-            </div>
-          )}
         </div>
-
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoading}
           className="w-full bg-gray-200 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {loading ? 'Обработка...' : 'Зарегистрироваться'}
+          {isLoading ? 'Обработка...' : 'Зарегистрироваться'}
         </button>
       </form>
 
+      <div className="relative flex items-center my-6">
+        <div className="flex-grow border-t border-gray-600"></div>
+        <span className="flex-shrink mx-4 text-gray-400 text-sm">или</span>
+        <div className="flex-grow border-t border-gray-600"></div>
+      </div>
+
+
       <p className="text-white text-center mt-6">
         Уже есть аккаунт?{' '}
-        <a href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
+        <Link to="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
           Войти
-        </a>
+        </Link>
       </p>
     </div>
   );

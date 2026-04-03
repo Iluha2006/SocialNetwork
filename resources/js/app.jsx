@@ -1,22 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '../js/components/App';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './store/UserStore';
-
-import '../css/app.css';
+import App from './components/App';
+import { store, persistor } from './configStore/configureStore';
 import './echo';
-import axios from 'axios';
+import '../css/app.css';
 
-    const root = ReactDOM.createRoot(document.getElementById('app'));
-    root.render(
-      <React.StrictMode>
+const root = ReactDOM.createRoot(document.getElementById('app'));
+root.render(
+    <React.StrictMode>
         <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <App />
-          </PersistGate>
+            <PersistGate  persistor={persistor}>
+                <App />
+            </PersistGate>
         </Provider>
-      </React.StrictMode>
-    );
-
+    </React.StrictMode>
+);

@@ -13,6 +13,8 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'auth/login',
+         'auth/yandex/callback',
+
         '/sanctum/csrf-cookie',
         'profile/*',
         'auth/register',

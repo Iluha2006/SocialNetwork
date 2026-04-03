@@ -5,7 +5,7 @@ import {
     createCarer,
     updateCarerById,
     clearMessages
-} from '../../../store/Carer';
+} from '../../../store/settings/Carer';
 import cities from '../ContactProfile/city';
 
 const CarerProfile = () => {

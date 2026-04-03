@@ -1,4 +1,4 @@
-import { sendAnswer } from '../store/AudioMessage';
+import { sendAnswer } from '../store/Files/AudioMessage';
 
 export const handleOffer = async (peerConnectionRef, offer, receiverId, userId, audioStream) => {
     try {
@@ -15,9 +15,8 @@ export const handleOffer = async (peerConnectionRef, offer, receiverId, userId, 
 
         const answer = await peerConnectionRef.current.createAnswer();
         await peerConnectionRef.current.setLocalDescription(answer);
-        await sendAnswer(answer, receiverId, userId);
 
-        return answer;
+        return { success: true, answer };
     } catch (error) {
         console.error('Error handling offer for audio transfer:', error);
         throw error;

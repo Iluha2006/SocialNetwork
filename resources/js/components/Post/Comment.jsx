@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 
-import { createComment , fetchComments, deleteComment } from '../../store/Post';
+import { createComment , fetchComments, deleteComment } from '../../store/PostUser/Post';
 
 
 const Comments = ({ postId }) => {

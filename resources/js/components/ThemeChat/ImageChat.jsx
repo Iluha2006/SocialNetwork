@@ -4,7 +4,7 @@ import {
     loadBackground,
     uploadBackground,
     selectBackgroundByUserId,
-} from "../../store/BacroundImages";
+} from "../../store/Files/BacroundImages";
 
 const ImageChat = (props) => {
 

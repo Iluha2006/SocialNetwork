@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchUserImages, deleteUserImage } from '../../../store/ImagesStore';
+import { fetchUserImages, deleteUserImage } from '../../../store/Files/ImagesStore';
 
 
 const UserPhotos = () => {

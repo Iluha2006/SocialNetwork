@@ -1,13 +1,10 @@
-
-import { sendIceCandidate } from '../store/AudioMessage';
-
-
-export const handleIceCandidate = async (candidate, receiverId, userId) => {
+export const handleIceCandidate = async (peerConnection, candidate) => {
     try {
-
-      const ice=   await sendIceCandidate(candidate, receiverId, userId);
-      return ice;
+        if (!candidate) return;
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        return { success: true };
     } catch (error) {
         console.error('Error adding ICE candidate:', error);
+        throw error;
     }
 };

@@ -10,7 +10,7 @@ import {
     setSelectedBackground,
     clearSelectedBackground,
     selectSelectedBackgroundByChatId
-} from '../../store/BacroundImages';
+} from '../../store/Files/BacroundImages';
 import { useParams } from 'react-router-dom';
 
 const ThemeChats = () => {

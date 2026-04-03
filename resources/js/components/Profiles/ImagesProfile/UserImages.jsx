@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { fetchUserImages, deleteUserImage } from '../../../store/ImagesStore';
+import { fetchUserImages, deleteUserImage } from '../../../store/Files/ImagesStore';
 
 const UserImages = ({userId: users}) => {
   const [selectedImage, setSelectedImage] = useState(null);

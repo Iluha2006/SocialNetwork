@@ -1,24 +1,21 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\Message;
-use App\Models\AudioMessage;
 use App\Models\User;
 use App\Events\MessageDeleted;
-use App\Events\PrivateMessage;
+use App\Services\Cache\MessageCacheService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class MessageChatService
 {
-    protected $cacheService;
-    protected $audioMessageService;
-    public function __construct(CacheService $cacheService, AudioMessageService $audioMessageService)
-    {
-        $this->cacheService = $cacheService;
-        $this->audioMessageService = $audioMessageService;
-    }
+    public function __construct(
+        protected MessageCacheService $cacheService,
+        protected AudioMessageService $audioMessageService
+    ) {}
     public function getUserChats(int $userId)
     {
 
@@ -156,8 +153,9 @@ class MessageChatService
 
         $this->audioMessageService->deleteConversationAudio($currentUserId, $otherUserId);
 
-
-        $this->clearChatCache($currentUserId, $otherUserId);
+        $this->cacheService->clearChatMessagesCache($currentUserId, $otherUserId);
+        $this->cacheService->clearUserChatsCache($currentUserId);
+        $this->cacheService->clearUserChatsCache($otherUserId);
 
         return true;
     }
@@ -180,11 +178,4 @@ class MessageChatService
     }
 
 
-    public function clearChatCache(int $currentUserId, int $otherUserId): void
-{
-    $cacheKey = "chat_messages:{$currentUserId}:{$otherUserId}";
-    Cache::forget($cacheKey);
-    $reverseKey = "chat_messages:{$otherUserId}:{$currentUserId}";
-    Cache::forget($reverseKey);
-}
 }

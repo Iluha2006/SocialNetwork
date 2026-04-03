@@ -1,172 +1,115 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 
-import {
-    checkProfilePrivacy,
-    checkFriendsPrivacy,
-    checkImagesPrivacy
-} from '../../../store/PrivateProfile';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
+
+import { useProfilePrivacy } from '../../../hooks/SettingsProfile/useProfilePrivacy';
+import { useFriendshipStatus } from '../../../hooks/SettingsProfile/useFriendshipStatus';
+
+import BlockedView from '../../../UI/States/UserProfile/BlockedView';
+
+import ErrorMessage from '../../../UI/States/UserProfile/ErrorMessage';
+
+import LoadingSpinner from '../../../UI/States/UserProfile/LoadingSpinner';
+
+import NotFoundMessage from '../../../UI/States/UserProfile/NotFoundMessage';
+import PrivateProfileView from '../../../UI/States/UserProfile/PrivateProfileView';
+
 import UserImages from './UserImages';
-
-import { fetchProfile, unblockUser, blockUser } from '../../../store/Profile';
-import { sendFriendRequest, fetchFriendRequests, fetchFriends, checkAndSetFriendshipStatus } from '../../../store/FriendList';
+import { useGetProfileQuery, useBlockUserMutation, useUnblockUserMutation } from '../../../api/modules/profileApi';
+import { setViewedProfile, setIsBlocked, setHasBlockedThisUser } from '../../../store/settings/Profile';
 import ProfileDetail from '../../SettingsProfile/ModalDetail/ProfileDetail';
+import FriendButton from '../../../UI/Button/UserProfile/FriendButton';
+import MessageButton from '../../../UI/Button/UserProfile/MessageButton';
+import BlockButton from '../../../UI/Button/UserProfile/BlockButton';
 
 const UserProfile = () => {
     const navigate = useNavigate();
     const { userId } = useParams();
-    const dispatch = useDispatch();
 
     const currentUser = useSelector(state => state.user.user);
+    const { viewedProfile,  error, isBlocked, hasBlockedThisUser} = useSelector(state => state.profile.profile);
 
+    const {
+        data: profileData,
+        isLoading: isProfileLoading,
+        refetch: refetchProfile
+    } = useGetProfileQuery(userId, { skip: !userId });
+    const profile = profileData || viewedProfile;
+    const canShowActions = currentUser?.id  || profile.id;
+    const {
+        privacyInfo,
+        isLoading: isPrivacyLoading,
+        error: privacyError,
+        friendsCount,
+        refetch: refetchPrivacy
+    } = useProfilePrivacy(userId);
+    const { friends } = useSelector(state => state.friends);
+    const {
+        friendshipStatus,
+        isLoading: isFriendshipLoading,
+        error: friendshipError,
+        sendRequest,
+        checkStatus: refetchFriendship
+    } = useFriendshipStatus(profile || currentUser);
 
-    const { viewedProfile, loading, error, isBlocked, hasBlockedThisUser } = useSelector(state => state.profile);
-    const { friends, friendsLoading, outgoingRequests } = useSelector(state => state.friends);
+    const totalFriends = friends?.length || 0;
+    const [blockUserMutation] = useBlockUserMutation();
+    const [unblockUserMutation] = useUnblockUserMutation();
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [localError, setLocalError] = useState('');
-    const [friendshipStatus, setFriendshipStatus] = useState('not_friends');
-
-    const profile = viewedProfile;
-
-    const [privacyInfo, setPrivacyInfo] = useState({
-        canViewProfile: true,
-        canViewFriends: true,
-        canViewImages: true,
+    const isLoading = isProfileLoading || isPrivacyLoading || isFriendshipLoading;
+useEffect(() => {
+    console.log('🔍 UserProfile debug:', {
+        userId,
+        currentUser: currentUser?.id,
+        profileData: !!profileData,
+        viewedProfile: !!viewedProfile,
+        profile: profile?.user_id,
+        privacyInfo,
+        canViewProfile: privacyInfo?.canViewProfile,
+        isBlocked,
+        friendshipStatus,
     });
-
-    useEffect(() => {
-        if (userId && !isNaN(parseInt(userId))) {
-            const fetchData = async () => {
-
-                const privacyResult = await dispatch(checkProfilePrivacy(parseInt(userId)));
-                console.log('Profile privacy result:', privacyResult);
-
-
-                if (!privacyResult.success) {
-                    setPrivacyInfo({
-                        canViewProfile: false,
-                        canViewFriends: false,
-                        canViewImages: false,
-                        message: privacyResult.message,
-                        profileVisibility: privacyResult.profile_visibility
-                    });
-                    return;
-                }
-
-
-                dispatch(fetchProfile(parseInt(userId)));
-
-
-                const friendsPrivacy = await dispatch(checkFriendsPrivacy(parseInt(userId)));
-                console.log('Friends privacy result:', friendsPrivacy);
-
-                if (friendsPrivacy.success === false) {
-                    setPrivacyInfo(prev => ({
-                        ...prev,
-                        canViewFriends: false,
-                        friendsVisible: friendsPrivacy.friends_visible
-                    }));
-                } else {
-                    dispatch(fetchFriends(parseInt(userId)));
-                    setPrivacyInfo(prev => ({
-                        ...prev,
-                        canViewFriends: true
-                    }));
-                }
-
-
-                const imagesPrivacy = await dispatch(checkImagesPrivacy(parseInt(userId)));
-                console.log('Images privacy result:', imagesPrivacy);
-
-                setPrivacyInfo(prev => ({
-                    ...prev,
-                    canViewImages: imagesPrivacy.success !== false
-                }));
-            };
-
-            fetchData();
-        }
-    }, [dispatch, userId]);
+}, [userId, currentUser, profileData, viewedProfile]);
 
 
 
-
-
-
-    useEffect(() => {
-        if (profile && currentUser) {
-            const outgoingRequest = outgoingRequests.find(r =>
-                r.receiver_id === profile.user_id && r.status === 'pending'
-            );
-
-            if (outgoingRequest) {
-                setFriendshipStatus('request_sent');
-            } else {
-                dispatch(checkAndSetFriendshipStatus(currentUser.id, profile.user_id))
-                    .then(result => {
-                        if (result.success) {
-                            setFriendshipStatus(result.status);
-                        }
-                    });
-            }
-        }
-    }, [profile, currentUser, outgoingRequests, dispatch]);
-
-    const totalFriends = friends.length;
 
     const handleBlockToggle = async () => {
-        if (!profile || !currentUser) return;
+        if (!profile?.user_id || !currentUser) return;
 
         try {
+
+
             if (!hasBlockedThisUser) {
-
-
-                await dispatch(blockUser(profile.user_id));
-
+                await blockUserMutation(profile.user_id).unwrap();
+                dispatch(setIsBlocked(true));
+                dispatch(setHasBlockedThisUser(true));
+            } else {
+                await unblockUserMutation(profile.user_id).unwrap();
+                dispatch(setIsBlocked(false));
+                dispatch(setHasBlockedThisUser(false));
             }
-            else {
-                await dispatch(unblockUser(profile.user_id));
-
-            }
+            refetchProfile();
+            refetchPrivacy();
         } catch (err) {
+            console.error('Block toggle error:', err);
             setLocalError('Не удалось изменить статус блокировки');
         }
     };
 
-
     const handleAddFriend = async () => {
-        if (profile && currentUser && friendshipStatus === 'not_friends') {
-            setIsLoading(true);
-            setLocalError('');
-            try {
-                const result = await dispatch(sendFriendRequest({
-                    sender_id: currentUser.id,
-                    receiver_id: profile.user_id
-                }));
+        if (friendshipStatus !== 'not_friends') return;
 
-                if (result.success) {
-                    setFriendshipStatus('request_sent');
-                    dispatch(fetchFriendRequests(currentUser.id));
-                } else {
-                    setLocalError(result.error);
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                setLocalError('Произошла непредвиденная ошибка');
-            } finally {
-                setIsLoading(false);
-            }
+        const result = await sendRequest();
+
+        if (!result.success) {
+            setLocalError(result.error || 'Произошла ошибка');
         }
     };
 
-    const handleMessage = () => {
-        if (profile) {
-            navigate(`/messages/${profile.user_id}`);
-        }
-    };
+
 
     const handleViewProfile = (friendId) => {
         navigate(`/profile/${friendId}`);
@@ -176,122 +119,38 @@ const UserProfile = () => {
         navigate(`/friends/${userId}`);
     };
 
-    const getFriendButtonText = () => {
-        switch (friendshipStatus) {
-            case 'friends':
-                return 'В друзьях';
-            case 'request_sent':
-                return 'Заявка отправлена';
-            case 'request_received':
-                return 'Ответить на заявку';
-            case 'not_friends':
-            default:
-                return 'Добавить в друзья';
-        }
-    };
 
-    const isFriendButtonDisabled = () => {
-        return friendshipStatus === 'friends' ||
-            friendshipStatus === 'request_sent' ||
-            friendshipStatus === 'request_received' ||
-            isLoading;
-    };
-
-
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                    <p className="text-white">Загрузка профиля...</p>
-                </div>
-            </div>
-        );
+    if (isLoading) {
+        return <LoadingSpinner text="Загрузка профиля" />;
     }
 
-    if (error) {
+    if (error || privacyError || friendshipError) {
         return (
-            <div className="max-w-7xl mx-auto p-5">
-                <div className="bg-red-900 bg-opacity-20 border-l-4 border-red-500 text-red-300 p-4 rounded">
-                    <p className="font-semibold">Ошибка:</p>
-                    <p>{error}</p>
-                </div>
-            </div>
+            <ErrorMessage
+                message={error || privacyError || friendshipError}
+                onRetry={() => {
+                    refetchProfile();
+                    refetchPrivacy();
+                    refetchFriendship();
+                }}
+            />
         );
     }
 
     if (!profile) {
-        return (
-            <div className="max-w-7xl mx-auto p-5">
-                <div className="text-center py-10">
-                    <p className="text-white text-xl">Профиль не найден</p>
-                </div>
-            </div>
-        );
+        return <NotFoundMessage onBack={() => navigate('/')} />;
     }
+
     if (isBlocked) {
-
-        return (
-            <div className="max-w-2xl mx-auto p-8 mt-10 text-center">
-                <div className="bg-gray-800 rounded-xl p-8 border border-red-500/30">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-24 w-24 mx-auto text-red-500 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <h2 className="text-2xl font-bold text-white mb-3">Доступ ограничен</h2>
-                    <p className="text-gray-400">
-                        Вы не можете просматривать этот профиль, так как владелец ограничил вам доступ.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-
-    if (totalFriends === 0) {
-        <div className="text-center py-8 text-gray-500">
-            <svg
-                className="w-12 h-12 mx-auto text-gray-400 mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-            </svg>
-            <p>Пока нет друзей</p>
-        </div>
+        return <BlockedView />;
     }
 
     if (!privacyInfo.canViewProfile) {
         return (
-            <div className="max-w-2xl mx-auto p-8 mt-10 text-center">
-                <div className="bg-gray-800 rounded-xl p-8 border border-yellow-500/30">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-24 w-24 mx-auto text-yellow-500 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <h2 className="text-2xl font-bold text-white mb-3">Профиль скрыт</h2>
-                    <p className="text-gray-400">
-                        {privacyInfo.message}
-                    </p>
-                </div>
-            </div>
+            <PrivateProfileView
+                message={privacyInfo.message}
+                visibility={privacyInfo.profileVisibility}
+            />
         );
     }
     return (
@@ -300,11 +159,6 @@ const UserProfile = () => {
             <div className="flex-1 min-w-0">
                 <div className="rounded-xl p-4 mb-5 shadow-lg " style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }}>
 
-                    {localError && (
-                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-5 rounded">
-                            {localError}
-                        </div>
-                    )}
 
 
                     <div className="flex flex-col md:flex-row p-8 gap-8 border-b border-gray-700 relative">
@@ -319,41 +173,27 @@ const UserProfile = () => {
 
 
                         <div className="flex flex-col gap-3 mt-5">
-                            {currentUser && profile && currentUser.id !== profile.user_id && (
-                                <>
-                                    <button
-                                        className={`px-5 py-2.5 border-none rounded-lg text-sm font-medium cursor-pointer transition-all min-w-40 disabled:opacity-60 disabled:cursor-not-allowed ${friendshipStatus === 'friends'
-                                                ? 'bg-green-500 hover:bg-green-600 text-white'
-                                                : friendshipStatus === 'pending'
-                                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                                                    : friendshipStatus === 'received'
-                                                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                                                        : 'bg-blue-500 hover:bg-blue-600 text-white'
-                                            }`}
-                                        onClick={handleAddFriend}
-                                        disabled={isFriendButtonDisabled()}
-                                    >
-                                        {getFriendButtonText()}
-                                    </button>
+                            {canShowActions && (
+                             <>
+                             <FriendButton
+                                 friendshipStatus={friendshipStatus}
+                                 isLoading={isFriendshipLoading}
+                                 disabled={['friends', 'request_sent', 'request_received'].includes(friendshipStatus)}
+                                 onClick={handleAddFriend}
+                             />
 
-                                    <button
-                                        onClick={handleMessage}
-                                        className="px-5 py-2.5 bg-gray-200 text-gray-700 border-none rounded-lg text-sm font-medium cursor-pointer transition-all min-w-40 hover:bg-gray-300"
-                                    >
-                                        Сообщение
-                                    </button>
+                             <MessageButton
+                                 recipientId={profile.user_id}
+                                 recipientName={profile.user?.name}
+                                 disabled={false}
+                             />
 
-
-                                    <button
-                                        onClick={handleBlockToggle}
-                                        className={`px-5 py-2.5 border-none rounded-lg text-sm font-medium cursor-pointer transition-all min-w-40 ${hasBlockedThisUser
-                                                ? 'bg-red-500 hover:bg-red-600 text-white'
-                                                : 'bg-gray-500 hover:bg-gray-600 text-white'
-                                            }`}
-                                    >
-                                        {hasBlockedThisUser ? 'Разблокировать' : 'Заблокировать'}
-                                    </button>
-                                </>
+                             <BlockButton
+                                 isBlocked={hasBlockedThisUser}
+                                 disabled={false}
+                                 onClick={handleBlockToggle}
+                             />
+                         </>
                             )}
                             <ProfileDetail userId={profile?.user_id} />
                         </div>
@@ -455,9 +295,6 @@ const UserProfile = () => {
                                 <p>Список друзей скрыт</p>
                             </div>
                         )}
-
-
-
                     {totalFriends > 9 && (
                         <button
                             className="w-full py-2.5 border-none rounded-lg bg-gray-100 text-gray-600 text-sm cursor-pointer transition-colors hover:bg-gray-200"

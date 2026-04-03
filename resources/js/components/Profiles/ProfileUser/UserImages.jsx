@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserImages } from '../../../store/ImagesStore';
+import { fetchUserImages } from '../../../store/Files/ImagesStore';
 
 const UserImages = ({ userId, compact = false }) => {
     const dispatch = useDispatch();

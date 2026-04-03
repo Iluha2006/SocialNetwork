@@ -17,7 +17,7 @@ return new class extends Migration
             $table->enum('profile_visibility', ['public', 'friends', 'private'])->default('public');
             $table->boolean('friends_visible')->default(true);
             $table->boolean('images_visible')->default(true);
-            $table->boolean('visible_friends')->default(true);
+
             $table->timestamps();
         });
     }

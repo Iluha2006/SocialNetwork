@@ -81,7 +81,7 @@ const Home = () => {
         onToggle={() => setIsMenuOpen(!isMenuOpen)}
       />
 
-      {/* Основной контент */}
+
       <div className="
         flex-1
         ml-0

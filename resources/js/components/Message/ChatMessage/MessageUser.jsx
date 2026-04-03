@@ -2,23 +2,23 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { getEcho } from '../../../echo';
-import getFileIcon from "./getFile";
-import {
-    sendMessage,
-    addMessage,
-} from "../../../store/UserStore";
+import getFileIcon from "../../../utils/getFileIcon";
+
+import { useSendMessageMutation } from '../../../api/modules/messages';
+
 import AudioRTC from "../../AudioMessageChat/AudioRTC";
-import { fetchAllProfiles } from "../../../store/Profile";
-import { deleteAudioMessage, getConversationAudio } from "../../../store/AudioMessage";
+import { useGetAllProfilesQuery } from '../../../api/modules/profileApi';
+import { getConversationAudio } from "../../../store/Files/AudioMessage";
 import ImageUpload from "../../ImageChat/ImageUpload";
 import FileUpload from "../../ChatFile/FileUpload";
 import CallButton from "../../Calls/CallButton";
 import "./MessageUser.css";
-import { selectSelectedBackgroundByChatId } from "../../../store/BacroundImages";
+import { selectSelectedBackgroundByChatId } from "../../../store/Files/BacroundImages";
 import Modal from "../../ModalChat/Modal";
-import useWebSocket from "../Socket/useWebSocket";
+import useWebSocket from "../../../hooks/Socket/useMessageSocket";
 import DeleteMessageButton from "../DeleteMessage/DeleteMessageButton";
-import useMessageDeletion from "../DeleteMessage/useMessageDeletion";
+import useMessageDeletion from "../../../hooks/useMessageDeletion";
+import useMessageSocket from "../../../hooks/Socket/useMessageSocket";
 
 const MessageUser = () => {
     const dispatch = useDispatch();
@@ -26,21 +26,34 @@ const MessageUser = () => {
     const { userId } = useParams();
     const messagesEndRef = useRef(null);
 
-    const { onlineUsers } = useSelector((state) => state.online);
-    const { user, loading, error, conversations, token } = useSelector(
-        (state) => state.user
-    );
 
+    const { onlineUsers } = useSelector((state) => state.online);
+    const { user } = useSelector((state) => state.user);
+    const { conversations } = useSelector((state) => state.chat);
     const { viewedProfile } = useSelector((state) => state.profile);
+
+    const { allProfiles: allProfilesFromSlice } = useSelector((state) => state.profile);
+    const { AudioConversations } = useSelector((state) => state.audio);
+
+
     const isBlocked = viewedProfile?.is_blocked || false;
     const hasBlockedThisUser = viewedProfile?.has_blocked_this_user || false;
 
-    const {
-        handleDeleteMessage,
-    } = useMessageDeletion(userId);
 
-    const { allProfiles } = useSelector((state) => state.profile);
-    const { AudioConversations } = useSelector((state) => state.audio);
+    const {
+        data: allProfilesData,
+        isLoading: isProfilesLoading,
+        isError: isProfilesError,
+        refetch: refetchAllProfiles
+    } = useGetAllProfilesQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+    });
+
+    const allProfiles = useMemo(() => {
+        return allProfilesData || allProfilesFromSlice || [];
+    }, [allProfilesData, allProfilesFromSlice]);
+
+    const [sendMessageMutation] = useSendMessageMutation();
     const [isRecordingAudio, setIsRecordingAudio] = useState(false);
     const [newMessage, setNewMessage] = useState("");
     const [selectedImage, setSelectedImage] = useState(null);
@@ -49,15 +62,20 @@ const MessageUser = () => {
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const [audioMode, setAudioMode] = useState(false);
+
     const chatId = [user?.id, parseInt(userId)];
+
+    const {
+        handleDeleteMessage,
+    } = useMessageDeletion(userId);
 
     const selectedBackground = useSelector((state) =>
         selectSelectedBackgroundByChatId(state, chatId)
     );
-    useWebSocket(userId);
+
+     useMessageSocket(userId)
 
     const canSendMessages = useMemo(() => {
-
         if (isBlocked || hasBlockedThisUser || !user) {
             return false;
         }
@@ -70,8 +88,7 @@ const MessageUser = () => {
         const conversationKey = [user.id, parseInt(userId)].sort().join('-');
 
         const textMessages = conversations[conversationKey]?.messages || [];
-        const audioMessages =
-            AudioConversations[conversationKey]?.messages || [];
+        const audioMessages = AudioConversations[conversationKey]?.messages || [];
 
         const combinedMessages = [
             ...textMessages.map((msg) => ({
@@ -79,10 +96,10 @@ const MessageUser = () => {
                 type: "text",
                 id: msg.id,
                 senderId: msg.senderId,
-                timestamp:
-                    msg.timestamp || new Date(msg.created_at).getTime() / 1000,
+                timestamp: msg.timestamp || new Date(msg.created_at).getTime() / 1000,
                 created_at: msg.created_at,
-            })), ...audioMessages.map((msg) => ({
+            })),
+            ...audioMessages.map((msg) => ({
                 ...msg,
                 type: "audio",
                 id: msg.id,
@@ -91,9 +108,7 @@ const MessageUser = () => {
                 created_at: msg.created_at,
             })),
         ];
-
-        const sortedMessages = combinedMessages.sort( (a, b) => a.timestamp - b.timestamp);
-
+        const sortedMessages = combinedMessages.sort((a, b) => a.timestamp - b.timestamp);
         return sortedMessages;
     }, [conversations, AudioConversations, user?.id, userId]);
 
@@ -113,21 +128,17 @@ const MessageUser = () => {
                 opacity: "0.85",
             };
         }
-        return {
-
-        };
+        return {};
     }, [selectedBackground]);
 
-
     const recipientProfile = useMemo(() => {
-
         const profilesArray = Array.isArray(allProfiles) ? allProfiles : [];
 
-
-        const profile = profilesArray.find((profile) =>
-            profile.user_id === parseInt(userId) || profile.id === parseInt(userId)
-        );
-
+        const profile = profilesArray.find((profile) => {
+            return profile.user_id === parseInt(userId) ||
+                   profile.id === parseInt(userId) ||
+                   profile.user?.id === parseInt(userId);
+        });
 
         return profile;
     }, [allProfiles, userId]);
@@ -138,10 +149,6 @@ const MessageUser = () => {
                 onlineUser.id === parseInt(userId) && onlineUser.online_status
         );
     }, [onlineUsers, userId]);
-
-    useEffect(() => {
-        dispatch(fetchAllProfiles());
-    }, [dispatch]);
 
     useEffect(() => {
         scrollToBottom();
@@ -161,49 +168,7 @@ const MessageUser = () => {
         setSelectedImage(null);
     };
 
-    useEffect(() => {
-        if (!user?.id || !userId) return;
-
-        const echo = getEcho();
-        const ids = [user.id, pareInt(userId)].sort();
-        const channelName = `chat.${ids[0]}.${ids[1]}`;
-
-        console.log('Подключаюсь к каналу:', channelName);
-
-        try {
-            const channel = echo.private(channelName);
-
-            channel.listen('.private-message', (event) => {
-                console.log('📨 Получено WebSocket сообщение:', event);
-
-                const message = event.message || event;
-
-                const isRelevant =
-                    (message.sender_id === user.id && message.receiver_id === parseInt(userId)) ||
-                    (message.sender_id === parseInt(userId) && message.receiver_id === user.id);
-
-                if (isRelevant) {
-                    dispatch(
-                        addMessage({
-                            id: message.id,
-                            senderId: message.sender_id,
-                            receiverId: message.receiver_id,
-                            content: message.content,
-                            images: message.images,
-                            file: message.file,
-                            timestamp: new Date(message.created_at).getTime() / 1000,
-                        })
-                    );
-                }
-            });
-
-        } catch (error) {
-            console.error(' Ошибка при настройке WebSocket:', error);
-        }
-    }, [user?.id, userId, dispatch]);
-
     const handleSendMessage = async () => {
-
         if (!canSendMessages) {
             alert("Вы не можете отправлять сообщения этому пользователю");
             return;
@@ -225,23 +190,23 @@ const MessageUser = () => {
         console.log('Отправляю сообщение:', messageData);
 
         try {
-            const result = await dispatch(sendMessage(messageData));
+            const result = await sendMessageMutation(messageData);
 
             console.log('Результат отправки:', result);
 
-            if (result?.success) {
+            if (result.data?.success) {
+
                 setNewMessage("");
                 setSelectedImage(null);
                 setSelectedFile(null);
             }
-
         } catch (error) {
             console.error("Исключение при отправке:", error);
-
         } finally {
             setIsSending(false);
         }
     };
+
 
     const handleMessageClick = (message) => {
         if (message.senderId === user?.id) {
@@ -273,17 +238,12 @@ const MessageUser = () => {
         }
     };
 
-
-
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
         }
     };
-
-
-
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -303,10 +263,8 @@ const MessageUser = () => {
         dispatch(getConversationAudio(parseInt(userId)));
         setAudioMode(false);
     };
-
-    if (loading) return <div className="loading">Загрузка...</div>;
-    if (error) return <div className="error">{error}</div>;
-
+    if (isProfilesLoading) return <div className="loading">Загрузка...</div>;
+    if (isProfilesError) return <div className="error">Ошибка загрузки профилей</div>;
     if (isBlocked) {
         return (
             <div className="w-full max-w-lg mx-auto my-2.5 flex flex-col h-[900px] bg-white dark:bg-gray-900 rounded-2xl shadow-lg transition-colors">

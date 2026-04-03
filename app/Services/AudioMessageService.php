@@ -23,8 +23,6 @@ class AudioMessageService
     public function createAudioMessage(array $data)
     {
 
-
-
         $validator = Validator::make($data, [
             'audio_mess' => 'required|file|mimes:audio/mpeg,mp3,wav,aac,webm,ogg,opus|max:10240',
             'receiver_id' => 'required|integer|exists:users,id',

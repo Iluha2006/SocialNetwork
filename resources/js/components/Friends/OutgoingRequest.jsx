@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { rejectFriendRequest } from '../../store/FriendList';
+import { rejectFriendRequest } from '../../store/Friends/FriendList';
 
 const OutgoingRequests = () => {
     const dispatch = useDispatch();

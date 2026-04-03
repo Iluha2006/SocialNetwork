@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchContacts, createContact, updateContactData, deleteContact, setCurrentContact, clearError, clearContacts } from '../../../store/ContactUsers';
-import cities from './city';
+import { fetchContacts, createContact, updateContactData, deleteContact, setCurrentContact, clearError, clearContacts } from '../../../store/settings/ContactUsers';
+import cities from '../../../constants/cities';
 import Notification from './Notification';
 
 const ContactProfile = () => {

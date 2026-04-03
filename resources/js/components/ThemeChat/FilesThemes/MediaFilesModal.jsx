@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchChatFiles, clearFiles } from '../../../store/FileUsers';
+import { fetchChatFiles, clearFiles } from '../../../store/Files/FileUsers';
 import './MediaFilesModal.css';
 
 const MediaFilesModal = (props) => {

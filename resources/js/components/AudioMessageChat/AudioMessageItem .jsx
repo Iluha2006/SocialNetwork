@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getConversationAudio } from '../../store/AudioMessage';
+import { getConversationAudio } from '../../store/Files/AudioMessage';
 import "./Audio.css"
 
 const AudioMessageItem = ({ otherUserId }) => {

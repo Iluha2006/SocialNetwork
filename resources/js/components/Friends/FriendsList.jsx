@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 
-import { fetchFriends, deleteFriend } from '../../store/FriendList';
+import { fetchFriends, deleteFriend } from '../../store/Friends/FriendList';
 
 
 const FriendsList = () => {

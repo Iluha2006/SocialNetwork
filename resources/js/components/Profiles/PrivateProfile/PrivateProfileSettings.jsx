@@ -5,7 +5,7 @@ import {
   fetchPrivacySettings,
   updatePrivacySettings,
   clearError
-} from '../../../store/PrivateProfile';
+} from '../../../store/settings/PrivateProfile';
 
 const PrivateProfileSettings = () => {
   const dispatch = useDispatch();

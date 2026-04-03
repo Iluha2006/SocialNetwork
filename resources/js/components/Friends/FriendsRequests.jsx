@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchFriendRequests } from '../../store/FriendList';
+import { fetchFriendRequests } from '../../store/Friends/FriendList';
 import IncomingRequests from './IncomingRequests';
 import OutgoingRequests from './OutgoingRequest'
 

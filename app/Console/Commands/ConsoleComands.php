@@ -5,6 +5,7 @@ use File;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\LazyCollection;
 
 class ConsoleComands extends Command
 {
@@ -27,7 +28,12 @@ class ConsoleComands extends Command
      */
     public function handle()
     {
-       $file= File::get(public_path("index.php"));
-       Storage::disk("s3")->put("files/file.php",$file);
+      $coll= collect([1,2,3,4,5,6,]);
+
+      $coll->each(function ($value, $key) {
+        $this->info($key , $value);
+      });
+
+      $cel= new LazyCollection();
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addAudioMessage, sendMessageAudio } from '../../store/AudioMessage';
+import { addAudioMessage, sendMessageAudio } from '../../store/Files/AudioMessage';
 import { createOffer } from '../../WebRTC/CreateOffer';
 import { handleOffer } from '../../WebRTC/CreateAnswer';
 import { handleIceCandidate } from '../../WebRTC/IceCandidateAction';

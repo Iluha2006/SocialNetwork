@@ -15,12 +15,13 @@ class WebRTCOffer implements ShouldBroadcast
     public $toUserId;
     public $offer;
     public $fromUserId;
-
-    public function __construct($toUserId, $offer, $fromUserId)
+    public $callId;
+    public function __construct($toUserId, $offer, $fromUserId, $callId = null )
     {
         $this->toUserId = $toUserId;
         $this->offer = $offer;
         $this->fromUserId = $fromUserId;
+        $this->callId=$callId;
     }
 
     public function broadcastOn()
@@ -32,10 +33,11 @@ class WebRTCOffer implements ShouldBroadcast
     {
         return [
             'offer' => $this->offer,
-            'from' => $this->fromUserId
+            'from' => $this->fromUserId,
+            'call_id' => $this->callId,
+
         ];
     }
-
     public function broadcastAs()
     {
         return 'webrtc.offer';

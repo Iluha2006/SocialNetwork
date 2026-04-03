@@ -1,36 +1,62 @@
-// components/BlockedUsers/BlockedUsersList.jsx
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchBlockedUsers, unblockUser } from '../../../store/Profile';
+
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
+
+import {
+    useGetBlockedUsersQuery,
+    useUnblockUserMutation
+} from '../../../api/modules/profileApi';
+
 const BlockedUsersList = () => {
-    const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { blockedUsers, blockedUsersLoading, blockedUsersError, profile } = useSelector((state) => state.profile);
+
+    const {
+         blockedUsersData,
+        isLoading: isQueryLoading,
+        isError: isQueryError,
+        error: queryError,
+        refetch
+    } = useGetBlockedUsersQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+    });
+
+
+    const [unblockUserMutation, {
+        isLoading: isUnblocking
+    }] = useUnblockUserMutation();
+
+
+    const blockedUsersFromSlice = useSelector((state) => state.profile?.blockedUsers);
+
+
+    const blockedUsers = blockedUsersData || blockedUsersFromSlice || [];
+
+
+    const isLoading = isQueryLoading;
+    const error = queryError?.data?.message || queryError?.message;
+
+
     const [unblockingId, setUnblockingId] = useState(null);
 
-    useEffect(() => {
-        loadBlockedUsers();
-    }, []);
 
-    const loadBlockedUsers = async () => {
-        try {
-            await dispatch(fetchBlockedUsers());
-        } catch (error) {
-            console.error('Ошибка загрузки черного списка:', error);
-        }
-    };
+
 
     const handleUnblock = async (userId) => {
         if (window.confirm('Вы уверены, что хотите разблокировать этого пользователя?')) {
             try {
                 setUnblockingId(userId);
-                await dispatch(unblockUser(userId));
 
-                await dispatch(fetchBlockedUsers());
+
+                await unblockUserMutation(userId).unwrap();
+
+
+                 refetch();
+
             } catch (error) {
+                console.error('Unblock error:', error);
                 alert('Ошибка при разблокировке пользователя');
             } finally {
                 setUnblockingId(null);
@@ -43,6 +69,7 @@ const BlockedUsersList = () => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'Не указано';
         const date = new Date(dateString);
         return date.toLocaleDateString('ru-RU', {
             day: '2-digit',
@@ -53,7 +80,8 @@ const BlockedUsersList = () => {
         });
     };
 
-    if (blockedUsersLoading) {
+
+    if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
@@ -61,6 +89,22 @@ const BlockedUsersList = () => {
             </div>
         );
     }
+
+
+    if (error) {
+        return (
+            <div className="text-red-500 text-center p-10">
+                Ошибка: {error}
+                <button
+                    onClick={() => refetch()}
+                    className="ml-4 text-blue-400 hover:underline"
+                >
+                    Повторить
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-md sm:max-w-lg m-1.5 md:max-w-2xl lg:max-w-4xl mx-auto p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl min-h-screen bg-[rgba(1,14,24,0.946)]">
 
@@ -85,7 +129,6 @@ const BlockedUsersList = () => {
                     </button>
                 </div>
 
-
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-white/10">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
                         <div className="flex items-center">
@@ -103,17 +146,16 @@ const BlockedUsersList = () => {
                 </div>
             </div>
 
-            {blockedUsersError && (
+            {error && (
                 <div className="mb-4 sm:mb-6 bg-red-500/10 border border-red-500/30 p-3 sm:p-4 rounded-lg sm:rounded-xl backdrop-blur-sm">
                     <div className="flex items-start">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
-                        <p className="text-red-300 text-sm sm:text-base">{blockedUsersError}</p>
+                        <p className="text-red-300 text-sm sm:text-base">{error}</p>
                     </div>
                 </div>
             )}
-
 
             <div className="space-y-3 sm:space-y-4">
                 {blockedUsers.length === 0 ? (
@@ -159,9 +201,7 @@ const BlockedUsersList = () => {
                                                 </div>
                                             )}
                                         </div>
-
                                     </div>
-
 
                                     <div className="min-w-0 flex-1">
                                         <h3 className="font-medium text-white text-base sm:text-lg mb-0.5 sm:mb-1 truncate">
@@ -192,14 +232,14 @@ const BlockedUsersList = () => {
 
                                     <button
                                         onClick={() => handleUnblock(user.id)}
-                                        disabled={unblockingId === user.id}
+                                        disabled={unblockingId === user.id || isUnblocking}
                                         className={`flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base ${
-                                            unblockingId === user.id
+                                            unblockingId === user.id || isUnblocking
                                                 ? 'bg-green-500/40 text-white/70 cursor-not-allowed'
                                                 : 'bg-green-500/20 hover:bg-green-500/30 text-green-300 hover:text-green-200'
                                         }`}
                                     >
-                                        {unblockingId === user.id ? (
+                                        {unblockingId === user.id || isUnblocking ? (
                                             <>
                                                 <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -224,11 +264,6 @@ const BlockedUsersList = () => {
                     ))
                 )}
             </div>
-
-
-
-
-
         </div>
     );
 };

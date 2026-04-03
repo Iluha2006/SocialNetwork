@@ -17,6 +17,7 @@ export default defineConfig({
     hmr: {
       host: 'localhost',
       clientPort: 5173,
+      strictPort: true
     },
     proxy: {
       '/api': {

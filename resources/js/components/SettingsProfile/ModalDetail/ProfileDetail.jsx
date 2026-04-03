@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchContacts } from '../../../store/ContactUsers';
-import { fetchCarers } from '../../../store/Carer';
-import { fetchProfile } from '../../../store/Profile';
+import { fetchContacts } from '../../../store/settings/ContactUsers';
+import { fetchCarers } from '../../../store/settings/Carer';
+import { useGetProfileQuery } from '../../../api/modules/profileApi';
 const ProfileDetail = (props) => {
   const { userId } = props;
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.user);
-  const { profile } = useSelector(state => state.profile);
+  const profileFromSlice = useSelector(state => state.profile.profile);
   const { contact, loading, error } = useSelector(state => state.contacts);
-  const { carers, loading: carersLoading, error: carersError } = useSelector(state => state.carer);
+  const { carers=[], loading: carersLoading, error: carersError } = useSelector(state => state.carers);
   const [modalOpen, setModalOpen] = useState(false);
-  const profileBio = profile?.bio;
+  const profileBio = profileFromSlice?.bio;
   const targetUserId = userId || user?.id;
-
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    error: profileQueryError,
+    refetch
+  } = useGetProfileQuery(userId || user?.id, {
+    skip: !(userId || user?.id),
+    refetchOnMountOrArgChange: true,
+  });
   const toggleModal = () => {
     setModalOpen(!modalOpen);
   };

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
-import { fetchFriends } from '../../store/FriendList';
+import { fetchFriends } from '../../store/Friends/FriendList';
 
 
 const FriendProfile = () => {

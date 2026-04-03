@@ -1,10 +1,17 @@
+
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { endCall, setCallStatus, acceptCall } from '../../store/CallStore';
-import { useOfferCall } from './useOfferCall';
-import { useCallAnswer } from './useCallAnswer';
-import { useWebRTC } from './useWebRTC';
+import {
+    endCall,
+    setCallStatus,
+    acceptCall,
+    rejectCall,
+    clearCall
+} from '../../store/Call/CallStore';
+import { useCallAnswer } from '../../hooks/Calls/useAnswerCall';
+import { usePeerConnection } from '../../hooks/Calls/usePeerConnection';
+
 import './CallPage.css';
 
 const CallPage = () => {
@@ -12,217 +19,172 @@ const CallPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
+    // Redux state
     const { user } = useSelector(state => state.user);
     const { profile } = useSelector(state => state.profile);
     const { currentCall, incomingCall, callStatus } = useSelector(state => state.calls);
-    const { allProfiles } = useSelector((state) => state.profile);
+    const { allProfiles } = useSelector(state => state.profile);
 
+    // Local state
     const [callTime, setCallTime] = useState(0);
-    const [isMuted, setIsMuted] = useState(false);
-    const [isSpeaker, setIsSpeaker] = useState(false);
-
     const localAudioRef = useRef(null);
     const remoteAudioRef = useRef(null);
     const timerRef = useRef(null);
 
-    const { startCall } = useOfferCall();
-    const { peerConnectionRef, localStreamRef, remoteStreamRef, cleanup } = useWebRTC();
+    // WebRTC hooks
+    const {
+        peerConnectionRef,
+        localStreamRef,
+        remoteStreamRef,
+        cleanup
+    } = usePeerConnection();
 
 
-    const receiverId = currentCall?.receiver_id || currentCall?.caller_id;
 
-
+    // Определяем собеседника
     const getOtherUserId = useCallback(() => {
-        if (!currentCall || !user) return null;
-
-        return currentCall.caller_id === user.id
-            ? currentCall.receiver_id
-            : currentCall.caller_id;
-    }, [currentCall, user]);
-
+        if (!currentCall && !incomingCall) return null;
+        const call = currentCall || incomingCall;
+        return call.caller_id === user?.id ? call.receiver_id : call.caller_id;
+    }, [currentCall, incomingCall, user?.id]);
 
     const recipientProfile = useMemo(() => {
         const otherUserId = getOtherUserId();
-        if (!otherUserId || !allProfiles || allProfiles.length === 0) return null;
+        return allProfiles?.find(p => p.id === parseInt(otherUserId)) || profile;
+    }, [allProfiles, profile, getOtherUserId]);
 
-        return allProfiles.find((profile) => profile.id === parseInt(otherUserId));
-    }, [allProfiles, getOtherUserId]);
+    // 🎯 Обработка входящего звонка (если мы — получатель)
+    const handleCallAccepted = useCallback(({ peerConnection, localStream }) => {
+        dispatch(setCallStatus('ongoing'));
+        // Здесь можно обновить UI или отправить аналитику
+    }, [dispatch]);
 
-    const handleIncomingCall = useCallback((data) => {
-        console.log('Incoming call:', data);
-    }, []);
+    // Активируем useCallAnswer ТОЛЬКО если есть входящий звонок и мы ещё не ответили
+    useCallAnswer({
+        incomingCall: callStatus === 'ringing' ? incomingCall : null,
+        onCallAccepted: handleCallAccepted
+    });
 
-    useCallAnswer(handleIncomingCall);
-
-    useEffect(() => {
-        const initializeCall = async () => {
-            if (callId && user && receiverId) {
-                if (callStatus === 'initiated' || callStatus === 'ongoing') {
-                    await startCall(receiverId);
-                }
-            }
-        };
-
-        initializeCall();
-    }, [callId, user, callStatus, receiverId, startCall]);
-
+    // Подключение аудио-элементов к стримам
     useEffect(() => {
         if (localAudioRef.current && localStreamRef.current) {
             localAudioRef.current.srcObject = localStreamRef.current;
         }
-
         if (remoteAudioRef.current && remoteStreamRef.current) {
             remoteAudioRef.current.srcObject = remoteStreamRef.current;
         }
     }, [localStreamRef.current, remoteStreamRef.current]);
 
+    // Таймер звонка
     useEffect(() => {
         if (callStatus === 'ongoing') {
-            timerRef.current = setInterval(() => {
-                setCallTime(prev => prev + 1);
-            }, 1000);
-        } else {
-            clearInterval(timerRef.current);
+            timerRef.current = setInterval(() => setCallTime(t => t + 1), 1000);
         }
-
         return () => clearInterval(timerRef.current);
     }, [callStatus]);
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        const timeAudio = mins.toString().padStart(2, '0');
-        const second = secs.toString().padStart(2, '0');
-        return `${timeAudio}:${second}`;
-    };
-
-    const handleAcceptCall = async () => {
-        try {
-            if (incomingCall) {
-                await dispatch(acceptCall(incomingCall.call_id));
-                setCallStatus('ongoing');
-            }
-        } catch (error) {
-            console.error('Error accepting call:', error);
-        }
-    };
-
+    // Действия
     const handleEndCall = async () => {
         try {
-            if (callId) {
-                await dispatch(endCall(callId));
-            }
+            if (callId) await dispatch(endCall(callId));
+            cleanup();
+            dispatch(clearCall());
             navigate('/home');
         } catch (error) {
-            console.error('Error ending call:', error);
-            navigate('/');
+            console.error('End call error:', error);
         }
     };
 
     const handleRejectCall = async () => {
         try {
-            if (incomingCall) {
-                await dispatch(rejectCall(incomingCall.call_id));
+            if (incomingCall?.callId) {
+                await dispatch(rejectCall(incomingCall.callId));
             }
             cleanup();
+            dispatch(clearCall());
             navigate('/');
         } catch (error) {
-            console.error('Error rejecting call:', error);
-            cleanup();
-            navigate('/');
+            console.error('Reject call error:', error);
         }
     };
 
-
-
-
-
-    const getCallStatusText = () => {
-        switch (callStatus) {
-            case 'initiated':
-                return 'Установка соединения...';
-            case 'ringing':
-                return 'Вызов...';
-            case 'ongoing':
-                return `Время: ${formatTime(callTime)}`;
-            case 'ended':
-                return 'Звонок завершен';
-            default:
-                return 'Установка соединения'
-
-        }
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        return `${mins}:${secs}`;
     };
 
+    const getStatusText = () => {
+        const statuses = {
+            'initiated': 'Соединение...',
+            'ringing': 'Вызов...',
+            'ongoing': `⏱ ${formatTime(callTime)}`,
+            'ended': 'Звонок завершён'
+        };
+        return statuses[callStatus] || 'Подключение...';
+    };
 
-    const displayName = recipientProfile ? recipientProfile.name : (profile?.name || 'Пользователь');
-    const displayAvatar = recipientProfile
-        ? (recipientProfile.avatar || "https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13")
-        : (profile?.avatar || "https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13");
+    // UI
+    const isIncoming = !!incomingCall && callStatus === 'ringing';
+    const displayName = recipientProfile?.name || 'Пользователь';
+    const displayAvatar = recipientProfile?.avatar || '/default-avatar.png';
 
     return (
         <div className="call-page">
-            <audio
-                ref={localAudioRef}
-                autoPlay
-                muted
-                className="local-audio"
-            />
-            <audio
-                ref={remoteAudioRef}
-                autoPlay
-                className="remote-audio"
-            />
+            {/* Аудио-элементы */}
+            <audio ref={localAudioRef} autoPlay muted className="hidden" />
+            <audio ref={remoteAudioRef} autoPlay className="hidden" />
 
             <div className="call-container">
+                {/* Заголовок */}
                 <div className="call-header">
-                    <h1 className="call-title">
-                        {incomingCall ? 'Входящий звонок' : 'Исходящий звонок'}
-                    </h1>
-                    <div className="call-status">
-                        {getCallStatusText()}
-                    </div>
+                    <h1>{isIncoming ? '📥 Входящий звонок' : '📤 Исходящий звонок'}</h1>
+                    <div className="call-status">{getStatusText()}</div>
                 </div>
 
+                {/* Информация о собеседнике */}
                 <div className="call-info">
-                    <div className="caller-info">
+                    <img src={displayAvatar} alt={displayName} width="140" height="140" />
+                    <div className="caller-name">{displayName}</div>
+                </div>
 
-                         <img width="140"  height="140" src={displayAvatar}  />
+                {/* Кнопки управления */}
+                <div className="call-controls">
+                    <button
+                        onClick={toggleMute}
+                        className={`control-btn ${isMuted ? 'active' : ''}`}
+                        aria-pressed={isMuted}
+                    >
+                        {isMuted ? '🔇' : '🎤'} {isMuted ? 'Включить' : 'Выкл. микрофон'}
+                    </button>
 
-                        <div className="caller-name">
-                            {displayName}
-                        </div>
+                    <button
+                        onClick={toggleSpeaker}
+                        className={`control-btn ${isSpeaker ? 'active' : ''}`}
+                    >
+                        {isSpeaker ? '🔊' : '🔈'} {isSpeaker ? 'Динамик' : 'Наушники'}
+                    </button>
 
-                    </div>
+                    <button onClick={handleEndCall} className="control-btn end-call-btn">
+                        🔴 Завершить
+                    </button>
                 </div>
 
 
-                <div className="call-indicators">
-                    <div className={`indicator ${isMuted ? 'active' : ''}`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" className="bi bi-mic" viewBox="0 0 16 16">
-                            <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5"/>
-                            <path d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3"/>
-                        </svg>
-                        {isMuted && <span className="indicator-text">Микрофон выключен</span>}
+                {isIncoming && (
+                    <div className="incoming-actions">
+                        <button onClick={handleRejectCall} className="reject-btn">
+                            ❌ Отклонить
+                        </button>
+                        <button
+                            onClick={() => dispatch(acceptCall(incomingCall.callId))}
+                            className="accept-btn"
+                        >
+                            ✅ Принять
+                        </button>
                     </div>
-                    <div className="call-indicators">
-
-                    <div className={`indicator ${isSpeaker ? 'active' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-volume-up-fill" viewBox="0 0 16 16">
-  <path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/>
-  <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
-  <path d="M8.707 11.182A4.5 4.5 0 0 0 10.025 8a4.5 4.5 0 0 0-1.318-3.182L8 5.525A3.5 3.5 0 0 1 9.025 8 3.5 3.5 0 0 1 8 10.475zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06"/>
-</svg>
-<button
-                                className="control-btn end-call-btn"
-                                onClick={handleEndCall}
-                            >
-                                <span className="btn-text">Завершить</span>
-                            </button>
-                    </div>
-                </div>
-                </div>
-
-         </div>
+                )}
+            </div>
         </div>
     );
 };

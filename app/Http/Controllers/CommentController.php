@@ -44,7 +44,7 @@ class CommentController extends Controller
         $comment->delete();
         return response()->json([
             'success' => true,
-            'message' => 'Comment deleted successfully'
+            'message' => 'Сообщение удалено'
         ]);
     }
 }

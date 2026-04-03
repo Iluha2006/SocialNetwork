@@ -1,36 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { removeAudioMessage,removeAudioConversation } from '../../store/AudioMessage';
-import { removeConversation, deleteChat, fetchUserChatList } from '../../store/UserStore';
+
+import { removeAudioConversation } from '../../store/Files/AudioMessage';
+import {
+    useFetchChatListQuery,
+    useDeleteChatMutation
+} from '../../api/modules/chatApi';
 
 const ChatList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-    const [chatsLoading, setChatsLoading] = useState(true);
-    const [deleteMode, setDeleteMode] = useState(false);
+    const {
+        data: chats = [],
+        isLoading: chatsLoading,
+        refetch: refetchChats
+    } = useFetchChatListQuery();
+
+    const [deleteChatMutation] = useDeleteChatMutation();
+
+    const { user } = useSelector(state => state.user);
+    const { conversations } = useSelector(state => state.chat);
     const { AudioConversations } = useSelector(state => state.audio);
-    const { user, conversations, chats } = useSelector(state => state.user);
     const { allProfiles } = useSelector(state => state.profile);
     const { onlineUsers } = useSelector(state => state.online);
 
-    useEffect(() => {
-        const loadChats = async () => {
-            setChatsLoading(true);
-            try {
-                await dispatch(fetchUserChatList());
-            } catch (error) {
-                console.error('Ошибка загрузки чатов:', error);
-            } finally {
-                setChatsLoading(false);
-            }
-        };
-
-        if (user?.id ) {
-            loadChats();
-        }
-    }, [dispatch, user?.id]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [deleteMode, setDeleteMode] = useState(false);
 
     const getOtherUserProfile = (otherUserId) => {
         return allProfiles.find(profile => profile.id === otherUserId);
@@ -42,87 +38,68 @@ const ChatList = () => {
 
     const getLastMessageText = (chat) => {
         if (!chat) return 'Нет сообщений';
-        if (chat.last_message && chat.last_message.content) {
-            return chat.last_message.content;
-        }
+        if (chat.last_message?.content) return chat.last_message.content;
+        if (chat.content) return chat.content;
 
-        if (chat.content) {
-            return chat.content;
-        }
         const currentUserId = user?.id;
         if (currentUserId) {
             const conversationKey = [currentUserId, chat.id].sort().join('-');
             const conversation = conversations[conversationKey];
-            const conversationAudioMessage = AudioConversations[conversationKey];
+            const audioConversation = AudioConversations[conversationKey];
 
-            if (conversation && conversation.messages && conversation.messages.length > 0) {
-                const lastMessage = conversation.messages[conversation.messages.length - 1];
-                if (lastMessage.images) return 'Изображение';
-                if (lastMessage.file) return 'Файл';
-                return lastMessage.content || 'Сообщение';
+            if (conversation?.messages?.length > 0) {
+                const last = conversation.messages[conversation.messages.length - 1];
+                if (last.images) return 'Изображение';
+                if (last.file) return 'Файл';
+                return last.content || 'Сообщение';
             }
-
-            if (conversationAudioMessage && conversationAudioMessage.messages && conversationAudioMessage.messages.length > 0) {
+            if (audioConversation?.messages?.length > 0) {
                 return 'Голосовое сообщение';
             }
         }
-
         return 'Нет сообщений';
     };
 
     const getLastMessageTime = (chat) => {
-        if (chat.last_message && chat.last_message.created_at) {
-            return chat.last_message.created_at;
-        }
-
+        if (chat.last_message?.created_at) return chat.last_message.created_at;
         const currentUserId = user?.id;
         if (currentUserId) {
-            const conversationKey = [currentUserId, chat.id].sort().join('-');
-            const conversation = conversations[conversationKey];
-            if (conversation && conversation.lastMessage) {
-                return conversation.lastMessage.timestamp * 1000;
-            }
+            const key = [currentUserId, chat.id].sort().join('-');
+            const conv = conversations[key];
+            if (conv?.lastMessage) return conv.lastMessage.timestamp * 1000;
         }
-
         return null;
     };
 
     const handleChatClick = (userId) => {
-        if (deleteMode) {
-            return;
-        }
-
+        if (deleteMode) return;
         navigate(`/messages/${userId}`);
     };
 
-    const handleDeleteChat = (otherUserId, event) => {
+    // 🎯 Удаление чата через RTK Query
+    const handleDeleteChat = async (otherUserId, event) => {
         event.stopPropagation();
         setShowDeleteConfirm(otherUserId);
     };
 
     const confirmDelete = async (otherUserId) => {
         try {
-            const result = await dispatch(deleteChat(otherUserId));
+            // Вызываем мутацию RTK Query
+            await deleteChatMutation(otherUserId).unwrap();
+
+            // Дополнительно очищаем аудио-кэш (если нужно)
             const conversationKey = [user.id, otherUserId].sort().join('-');
+            dispatch(removeAudioConversation(conversationKey));
 
-            if (result.success) {
-
-                dispatch(removeConversation(conversationKey));
-
-
-                dispatch(removeAudioConversation(conversationKey));
-                setShowDeleteConfirm(null);
-                await dispatch(fetchUserChatList());
-            }
+            setShowDeleteConfirm(null);
+            // Список чатов обновится автоматически благодаря invalidatesTags
         } catch (error) {
             console.error('Ошибка удаления чата:', error);
+            // Можно показать toast/error пользователю
         }
     };
 
-    const cancelDelete = () => {
-        setShowDeleteConfirm(null);
-    };
-
+    const cancelDelete = () => setShowDeleteConfirm(null);
     const toggleDeleteMode = () => {
         setDeleteMode(!deleteMode);
         setShowDeleteConfirm(null);
@@ -130,16 +107,7 @@ const ChatList = () => {
 
     const formatTime = (timestamp) => {
         if (!timestamp) return '';
-
-        let date;
-        if (typeof timestamp === 'string') {
-            date = new Date(timestamp);
-        } else if (typeof timestamp === 'number') {
-            date = new Date(timestamp);
-        } else {
-            return '';
-        }
-
+        let date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp);
         if (isNaN(date.getTime())) return '';
 
         const now = new Date();
@@ -148,22 +116,15 @@ const ChatList = () => {
         yesterday.setDate(yesterday.getDate() - 1);
 
         if (date >= today) {
-            return date.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         } else if (date >= yesterday) {
             return 'Вчера';
         } else {
-            return date.toLocaleDateString([], {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
+            return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
     };
 
+    // Loading state от RTK Query
     if (chatsLoading) {
         return (
             <div className="w-full max-w-2xl mx-auto p-4 bg-gray-900 rounded-lg">
@@ -178,14 +139,13 @@ const ChatList = () => {
             <h2 className="text-xl font-semibold text-white mb-4">Мои чаты</h2>
             <div className="space-y-4">
                 <button
-  className="bg-orange-800 text-amber-50 px-4 py-2 rounded-lg font-medium transition-colors"
-
+                    className="bg-orange-800 text-amber-50 px-4 py-2 rounded-lg font-medium transition-colors"
                     onClick={toggleDeleteMode}
                 >
                     {deleteMode ? 'Отменить удаление' : 'Удалить чат'}
                 </button>
 
-                {chats && chats.length > 0 ? (
+                {chats?.length > 0 ? (
                     chats.map((chat) => {
                         const otherUserProfile = getOtherUserProfile(chat.id);
                         const isOnline = isUserOnline(chat.id);
@@ -202,7 +162,7 @@ const ChatList = () => {
                                 <div className="relative">
                                     <img
                                         src={otherUserProfile?.avatar || 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13'}
-                                        alt="Аватар собеседника"
+                                        alt="Аватар"
                                         className="w-12 h-12 rounded-full object-cover"
                                         onError={(e) => {
                                             e.target.src = 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13';
@@ -218,9 +178,7 @@ const ChatList = () => {
                                         <div className="text-white font-medium truncate">
                                             {otherUserProfile?.name || chat.name}
                                         </div>
-                                        {isOnline && (
-                                            <span className="text-green-500 text-xs font-medium">online</span>
-                                        )}
+                                        {isOnline && <span className="text-green-500 text-xs font-medium">online</span>}
                                     </div>
                                     <div className="text-gray-400 text-sm truncate">
                                         {getLastMessageText(chat)}
@@ -240,7 +198,6 @@ const ChatList = () => {
                                         className="p-2 text-red-500 hover:text-red-400 transition-colors"
                                         onClick={(e) => handleDeleteChat(chat.id, e)}
                                         title="Удалить чат"
-
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
@@ -250,10 +207,10 @@ const ChatList = () => {
                                 )}
 
                                 {showDeleteConfirm === chat.id && (
-                                    <div className="fixed inset-0  flex items-center justify-center z-50">
-                                        <div className=" rounded-lg p-6 max-w-sm mx-4"style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }} >
+                                    <div className="fixed inset-0 flex items-center justify-center z-50">
+                                        <div className="rounded-lg p-6 max-w-sm mx-4" style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }}>
                                             <p className="text-white mb-4">Вы уверены, что хотите удалить этот чат?</p>
-                                            <div className="flex gap-3" >
+                                            <div className="flex gap-3">
                                                 <button
                                                     className="flex-1 cursor-pointer bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors"
                                                     onClick={() => confirmDelete(chat.id)}

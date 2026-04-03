@@ -14,6 +14,7 @@ use App\Events\Answer;
 use App\Events\WebRTCIceCandidate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Broadcast;
 
 class CallController extends Controller
 {
@@ -71,8 +72,8 @@ class CallController extends Controller
         $result = $this->callService->CallAccept($call, $request->sdp_answer);
 
         if ($result['success']) {
-            event(new CallAccepted($call, $request->sdp_answer));
-            event(new Answer($call->caller_id, $request->sdp_answer, Auth::id()));
+            broadcast(new CallAccepted($call, $request->sdp_answer));
+            broadcast(new Answer($call->caller_id, $request->sdp_answer, Auth::id(),$call->id));
 
             return response()->json([
                 'call_id' => $call->id,

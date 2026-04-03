@@ -1,10 +1,11 @@
 <?php
 
 namespace App\Providers;
-
+use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
-
+use Illuminate\Support\Facades\Http;
+use Laravel\Socialite\Facades\Socialite;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -15,10 +16,12 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
+
     public function boot(): void
     {
+
         URL::forceScheme('http');
-        // УДАЛИТЕ этот блок - события регистрируются автоматически
+
         // Event::listen([
         //   IncomingCall::class,
         //   CallAccepted::class,

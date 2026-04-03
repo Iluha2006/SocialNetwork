@@ -54,14 +54,21 @@ class MessagesController extends Controller
 
         );
         broadcast(new PrivateMessage($message))->toOthers();
-        return response()->json(['data' => $message]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Сообщение успешно отправлено',
+            'data' => $message,
+        ]);
     }
 
     public function getChatMessages($userId)
     {
         $currentUserId = Auth::id();
         $messages = $this->messageService->getChatMessages($currentUserId, (int)$userId);
-        return response()->json($messages);
+        return response()->json([
+            'success' => true,
+            'messages' => $messages
+        ]);
     }
 
     public function deleteMessage($messageId)

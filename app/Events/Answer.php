@@ -16,11 +16,14 @@ class Answer implements ShouldBroadcast
     public $answer;
     public $fromUserId;
 
-    public function __construct($toUserId, $answer, $fromUserId)
+    public $callId;
+
+    public function __construct($toUserId, $answer, $fromUserId, $call)
     {
         $this->toUserId = $toUserId;
         $this->answer = $answer;
         $this->fromUserId = $fromUserId;
+        $this->callId=$call;
     }
 
     public function broadcastOn()
@@ -32,7 +35,8 @@ class Answer implements ShouldBroadcast
     {
         return [
             'answer' => $this->answer,
-            'from' => $this->fromUserId
+            'from' => $this->fromUserId,
+            'call_id' => $this->callId,
         ];
     }
 
