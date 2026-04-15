@@ -33,7 +33,6 @@ export const useProfileForm = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        email: '',
         bio: ''
     });
     const [localError, setLocalError] = useState('');
@@ -47,7 +46,6 @@ export const useProfileForm = () => {
         if (profile) {
             setFormData({
                 name: profile.name || '',
-                email: profile.email || '',
                 bio: profile.bio || ''
             });
         }
@@ -92,7 +90,6 @@ export const useProfileForm = () => {
             const updateData = {
                 userId: user?.id,
                 name: formData.name.trim(),
-                email: formData.email.trim(),
                 bio: formData.bio.trim()
             };
 
@@ -118,7 +115,7 @@ export const useProfileForm = () => {
     const handleCancel = () => {
         setFormData({
             name: profile?.name || '',
-            email: profile?.email || '',
+
             bio: profile?.bio || ''
         });
         setIsEditing(false);
@@ -152,11 +149,11 @@ export const useProfileForm = () => {
         successMessage,
         user,
 
-        // Статусы
+
         isQueryError,
         isUpdateError,
 
-        // Методы
+
         handleInputChange,
         handleSubmit,
         handleCancel,

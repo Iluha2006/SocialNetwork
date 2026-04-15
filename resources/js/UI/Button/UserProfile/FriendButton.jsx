@@ -1,13 +1,13 @@
 import React from 'react';
 
 
-const FriendButton = ({
+function FriendButton  ({
     friendshipStatus,
     isLoading = false,
     disabled = false,
     onClick,
     className = ''
-}) => {
+})  {
     const getButtonText = () => {
         const texts = {
             friends: 'В друзьях',

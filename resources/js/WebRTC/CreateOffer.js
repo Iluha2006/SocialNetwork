@@ -1,8 +1,6 @@
-import { sendOffer } from '../store/Files/AudioMessage';
 
 export const createOffer = async (peerConnectionRef, receiverId, userId, audioStream) => {
     try {
-
         if (audioStream) {
             audioStream.getTracks().forEach(track => {
                 peerConnectionRef.current.addTrack(track, audioStream);
@@ -13,9 +11,7 @@ export const createOffer = async (peerConnectionRef, receiverId, userId, audioSt
         await peerConnectionRef.current.setLocalDescription(offer);
 
 
-        await sendOffer(offer, receiverId, userId);
-
-        return offer;
+        return { success: true, offer };
     } catch (error) {
         console.error('Error creating offer for audio transfer:', error);
         throw error;

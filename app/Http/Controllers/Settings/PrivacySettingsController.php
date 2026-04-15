@@ -25,9 +25,8 @@ class PrivacySettingsController extends Controller
     public function PrivacyProfile(Request $request, $userId)
     {
         $viewer = Auth::guard('api')->user() ?? Auth::guard('web')->user();
-        $owner = User::with('privacySettings')->find($userId); // ✅ Загрузите отношение
+        $owner = User::with('privacySettings')->find($userId);
 
-        // ✅ Проверка: существует ли пользователь
         if (!$owner) {
             return response()->json([
                 'success' => false,
@@ -36,7 +35,7 @@ class PrivacySettingsController extends Controller
             ], 404);
         }
 
-        // ✅ Безопасный доступ к настройкам приватности
+
         $privacySettings = $owner->privacySettings ?? new PrivacySetting([
             'profile_visibility' => 'public',
             'friends_visible' => true,
@@ -58,7 +57,7 @@ class PrivacySettingsController extends Controller
             ->where('user_id', $userId)
             ->first();
 
-        // ✅ Если профиль не найден
+
         if (!$profile) {
             return response()->json([
                 'success' => false,

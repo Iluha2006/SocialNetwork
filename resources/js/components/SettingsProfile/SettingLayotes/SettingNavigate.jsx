@@ -14,7 +14,7 @@ const SettingNavigate = () => {
                 </svg>
             ),
             title: "Личная информация",
-            description: "Имя, почта, дата регистрации, о себе",
+            description: "Имя, о себе",
             color: "blue"
         },
         {

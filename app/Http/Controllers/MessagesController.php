@@ -30,7 +30,7 @@ class MessagesController extends Controller
         ]);
     }
 
-    public function getFiles(Request $request, $userId)
+    public function getFiles($userId)
     {
         $currentUserId = Auth::id();
 

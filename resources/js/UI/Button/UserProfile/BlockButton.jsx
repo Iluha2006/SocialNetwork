@@ -1,13 +1,12 @@
-// components/Profile/BlockButton.jsx
 import React from 'react';
-import PropTypes from 'prop-types';
 
-const BlockButton = ({
+
+function BlockButton  ({
     isBlocked = false,
     disabled = false,
     onClick,
     className = ''
-}) => {
+}) {
     return (
         <button
             onClick={onClick}
@@ -28,11 +27,5 @@ const BlockButton = ({
     );
 };
 
-BlockButton.propTypes = {
-    isBlocked: PropTypes.bool,
-    disabled: PropTypes.bool,
-    onClick: PropTypes.func.isRequired,
-    className: PropTypes.string,
-};
 
 export default BlockButton;

@@ -39,7 +39,7 @@ class CommentController extends Controller
 
     public function destroy(Request $request, $commentId)
     {
-        $user = $request->user();
+        $request->user();
         $comment = CommentPost::findOrFail($commentId);
         $comment->delete();
         return response()->json([

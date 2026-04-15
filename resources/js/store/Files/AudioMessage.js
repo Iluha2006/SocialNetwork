@@ -176,9 +176,8 @@ export const deleteAudioMessage = (messageId, sender_id, receiver_id) => async (
 };
 export const sendOffer = (offer, receiverId, userId) => async (getState) => {
     try {
-        const token = getState().user.token;
 
-        const response = await axios.post('/webrtc/offer', {
+     const response = await axios.post('/webrtc/offer', {
             receiver_id: parseInt(receiverId),
             offer: offer,
             sender_id: userId

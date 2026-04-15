@@ -1,4 +1,3 @@
-// hooks/useProfilePrivacy.js
 import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,7 +6,6 @@ import {
     checkImagesPrivacy
 } from '../../store/settings/PrivateProfile';
 import { fetchFriends } from '../../store/Friends/FriendList';
-
 export const useProfilePrivacy = (userId) => {
     const dispatch = useDispatch();
     const { friends } = useSelector(state => state.friends);
@@ -30,26 +28,51 @@ export const useProfilePrivacy = (userId) => {
 
             const privacyResult = await dispatch(checkProfilePrivacy(parseInt(userId)));
 
-            if (!privacyResult.success) {
+
+            if (privacyResult.error) {
+
+                if (privacyResult.error.status === 403) {
+                    const errorData = privacyResult.error.data;
+                    setPrivacyInfo({
+                        canViewProfile: false,
+                        canViewFriends: false,
+                        canViewImages: false,
+                        message: errorData?.message || 'Доступ ограничен',
+                        profileVisibility: errorData?.profile_visibility || 'private'
+                    });
+                } else {
+
+                    setError(privacyResult.error.message || 'Ошибка загрузки');
+                }
+                setIsLoading(false);
+                return;
+            }
+
+
+            const responseData = privacyResult.data;
+
+
+            if (responseData?.success === false) {
                 setPrivacyInfo({
                     canViewProfile: false,
                     canViewFriends: false,
                     canViewImages: false,
-                    message: privacyResult.message,
-                    profileVisibility: privacyResult.profile_visibility
+                    message: responseData.message,
+                    profileVisibility: responseData.profile_visibility
                 });
+                setIsLoading(false);
                 return;
             }
 
 
             const friendsPrivacy = await dispatch(checkFriendsPrivacy(parseInt(userId)));
-            if (friendsPrivacy.success === false) {
+            if (friendsPrivacy.error?.status === 403) {
                 setPrivacyInfo(prev => ({
                     ...prev,
                     canViewFriends: false,
-                    friendsVisible: friendsPrivacy.friends_visible
+                    friendsVisible: friendsPrivacy.error.data?.friends_visible
                 }));
-            } else {
+            } else if (friendsPrivacy.data?.success !== false) {
                 dispatch(fetchFriends(parseInt(userId)));
                 setPrivacyInfo(prev => ({ ...prev, canViewFriends: true }));
             }
@@ -57,28 +80,26 @@ export const useProfilePrivacy = (userId) => {
             const imagesPrivacy = await dispatch(checkImagesPrivacy(parseInt(userId)));
             setPrivacyInfo(prev => ({
                 ...prev,
-                canViewImages: imagesPrivacy.success !== false
+                canViewImages: !(imagesPrivacy.error?.status === 403)
             }));
 
         } catch (err) {
-            console.error('Error fetching privacy:', err);
-            setError(err.message || 'Ошибка загрузки настроек приватности');
+            console.error('Privacy fetch error:', err);
+            setError(err.message || 'Неизвестная ошибка');
         } finally {
             setIsLoading(false);
         }
-    }, [dispatch, userId]);
-
+    }, [dispatch, userId, fetchFriends]);
 
     useEffect(() => {
         fetchPrivacyData();
     }, [fetchPrivacyData]);
-
 
     return {
         privacyInfo,
         isLoading,
         error,
         refetch: fetchPrivacyData,
-        friendsCount: friends.length,
+        friendsCount: friends?.length || 0,
     };
 };

@@ -20,7 +20,6 @@ class PrivacySettingsResource extends JsonResource
                 'profile_visibility' => $profile->profile_visibility ?? 'public',
                 'friends_visible' =>  $profile->friends_visible ?? true,
                 'images_visible' =>  $profile->images_visible ?? true,
-
             ]
         ];
     }

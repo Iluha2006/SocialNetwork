@@ -18,28 +18,30 @@ class MessageChatService
     ) {}
     public function getUserChats(int $userId)
     {
+        $chatUserIds = collect();
 
-        $sentToUsers = Message::where('sender_id', $userId)
-            ->pluck('receiver_id')
-            ->unique()
-            ->toArray();
-        $receivedFromUsers = Message::where('receiver_id', $userId)
-            ->pluck('sender_id')
-            ->unique()
-            ->toArray();
+        $messages = Message::where('sender_id', $userId)
+            ->orWhere('receiver_id', $userId)
+            ->lazy();
 
-        $allChatUserIds = array_unique(array_merge($sentToUsers, $receivedFromUsers));
-        $allChatUserIds = array_filter($allChatUserIds, function($id) use ($userId) {
-            return $id != $userId;
-        });
+        foreach ($messages as $message) {
+            $chatUserId = $message->sender_id === $userId
+                ? $message->receiver_id
+                : $message->sender_id;
 
-        if (empty($allChatUserIds)) {
+            if ($chatUserId !== $userId) {
+                $chatUserIds->push($chatUserId);
+            }
+        }
+
+        $chatUserIds = $chatUserIds->unique()->values();
+
+        if ($chatUserIds->isEmpty()) {
             return collect([]);
         }
 
-
-        return User::whereIn('id', $allChatUserIds)
-            ->with(['profile'])
+        return User::whereIn('id', $chatUserIds)
+            ->with('profile')
             ->get(['id', 'name', 'online_status']);
     }
     public function updateMessage(int $messageId, string $content)

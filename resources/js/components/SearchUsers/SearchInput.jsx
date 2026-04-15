@@ -101,7 +101,7 @@ const Search = () => {
                     className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                     onClick={handleResultClick}
                   >
-                    {/* Аватар */}
+
                     <div className="relative w-10 h-10 rounded-full overflow-hidden mr-3 bg-gradient-to-br from-blue-500 to-purple-600">
                       {user.avatar ? (
                         <img
@@ -124,12 +124,10 @@ const Search = () => {
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {user.name}
                       </div>
-                      {user.email && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {user.email}
-                        </div>
-                      )}
+
                     </div>
+
+
                   </Link>
                 ))}
               </div>

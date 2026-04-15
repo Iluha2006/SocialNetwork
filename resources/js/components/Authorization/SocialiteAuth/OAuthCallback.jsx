@@ -22,7 +22,7 @@ const OAuthCallback = () => {
                 } else {
                     navigate('/error-oauth');
                 }
-                }
+            }
 
 
 

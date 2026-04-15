@@ -50,20 +50,12 @@ const PersonalProfile = () => {
                                 <label className="font-semibold text-gray-300 min-w-[150px]">Имя пользователя:</label>
                                 <span className="text-gray-200 font-medium">{user?.name}</span>
                             </div>
-                            <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                                <label className="font-semibold text-gray-300 min-w-[150px]">Email:</label>
-                                <span className="text-gray-200 font-medium">{user?.email}</span>
-                            </div>
+
                             <div className="flex justify-between items-center py-3 border-b border-gray-700">
                                 <label className="font-semibold text-gray-300 min-w-[150px]">О себе:</label>
                                 <span className="text-gray-200 font-medium">{user?.bio || 'Не указано'}</span>
                             </div>
-                            <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                                <label className="font-semibold text-gray-300 min-w-[150px]">Дата регистрации:</label>
-                                <span className="text-gray-200 font-medium">
-                                    {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('ru-RU') : 'Не указана'}
-                                </span>
-                            </div>
+
                         </div>
 
                         <button
@@ -92,20 +84,6 @@ const PersonalProfile = () => {
                                 />
                             </div>
 
-                            <div className="flex flex-col space-y-2">
-                                <label htmlFor="email" className="font-semibold text-gray-300">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className="px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Введите ваш email"
-                                />
-                            </div>
 
                             <div className="flex flex-col space-y-2">
                                 <label htmlFor="bio" className="font-semibold text-gray-300">

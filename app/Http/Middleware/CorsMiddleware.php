@@ -11,7 +11,7 @@ class CorsMiddleware
 
         $origin = $request->header('Origin');
 
-        // Разрешаем конкретные домены
+
         $allowedOrigins = [
             'http://localhost:5173',
             'http://frontend-app.com',

@@ -1,9 +1,8 @@
-// components/Profile/MessageButton.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
 
-const MessageButton = ({ recipientId, recipientName, disabled = false, className = '' }) => {
+
+function MessageButton ({ recipientId, recipientName, disabled = false, className = '' }) {
     const navigate = useNavigate();
 
     const handleMessage = () => {

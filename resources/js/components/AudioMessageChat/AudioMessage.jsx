@@ -6,7 +6,7 @@ import { handleOffer } from '../../WebRTC/CreateAnswer';
 import { handleIceCandidate } from '../../WebRTC/IceCandidateAction';
 import { getEcho } from '../../echo';
 
-const AudioRTC = ({ receiverId, compact = false, onSendComplete, onRecordingStateChange }) => {
+const AudioMessage = ({ receiverId, compact = false, onSendComplete, onRecordingStateChange }) => {
     const dispatch = useDispatch();
     const { user } = useSelector(state => state.user);
 
@@ -178,7 +178,7 @@ const AudioRTC = ({ receiverId, compact = false, onSendComplete, onRecordingStat
                 setAudioURL('');
                 setRecordingTime(0);
                 onSendComplete?.();
-                setError('✅ Аудио отправлено');
+                setError('Аудио отправлено');
             }
 
             onRecordingStateChange?.(false);
@@ -471,4 +471,4 @@ const AudioRTC = ({ receiverId, compact = false, onSendComplete, onRecordingStat
     );
 };
 
-export default AudioRTC;
+export default AudioMessage;

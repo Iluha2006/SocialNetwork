@@ -3,6 +3,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 import { useEffect } from 'react';
+import ThemeToggle from '../../components/ThemeSocialNetwork/ThemeToggle';
 
 export default function ModalProfile({
   isOpen,
@@ -11,7 +12,10 @@ export default function ModalProfile({
   onNavigate,
   isLogout = false
 }) {
-    const user = useSelector(state => state.user?.user);
+
+
+    const profile  = useSelector(state => state.profile.profile);
+    const oauthUser = useSelector(state => state.oauth?.user);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -49,8 +53,8 @@ export default function ModalProfile({
 
 
         <div className="flex items-center px-5 py-4 border-b border-gray-700">
-          {user?.avatar ? (
-            <img src={user.avatar} className="w-12 h-12 rounded-full object-cover mr-3" alt="Аватар" />
+          {profile?.data.avatar ? (
+            <img src={profile.data.avatar} className="w-12 h-12 rounded-full object-cover mr-3" alt="Аватар" />
           ) : (
             <div className="w-12 h-12 rounded-full mr-3">
               <img
@@ -62,7 +66,7 @@ export default function ModalProfile({
           )}
           <div className="flex flex-col">
             <span className="font-semibold text-base text-amber-50 mb-1">
-              {user?.name || 'Пользователь'}
+              {profile?.data.name || oauthUser?.name || 'Пользователь'}
             </span>
           </div>
         </div>
@@ -80,6 +84,8 @@ export default function ModalProfile({
             </svg>
             <span className="text-amber-50">Настройки</span>
           </button>
+
+          <ThemeToggle/>
 
           <button
             className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-red-400 text-sm hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"

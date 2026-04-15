@@ -22,6 +22,7 @@ import userSlice from '../store/Auth/UserStore';
 import { persistedCarerProfileReducer } from '../store/settings/Carer';
 import { oauthApi } from '../api/OauthApi';
 import profileApi from '../api/modules/profileApi';
+import themeSlice from '../store/Theme/themeSlice'
 import oauthSlice from '../store/Auth/Oauth'
 const rootReducer = combineReducers({
     privateProfile: persistedPrivateProfileReducer,
@@ -42,7 +43,7 @@ const rootReducer = combineReducers({
     files: persistedFilesReducer,
     audio: persistedAudioReducer,
     [oauthApi.reducerPath]: oauthApi.reducer,
-
+    theme: themeSlice,
     [authApi.reducerPath]: authApi.reducer,
     [profileApi.reducerPath]: profileApi.reducer,
     [chatsApi.reducerPath]: chatsApi.reducer,

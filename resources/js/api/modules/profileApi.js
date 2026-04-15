@@ -8,6 +8,7 @@ import {
     setAllProfiles,
     setBlockedUsers
 } from '../../store/settings/Profile';
+import { data } from 'react-router-dom';
 
 export const profileApi = createApi({
     reducerPath: 'profileApi',
@@ -19,91 +20,120 @@ export const profileApi = createApi({
         getProfile: build.query({
             query: (userId) => `/profile/${userId}`,
             providesTags: (result, error, userId) => [{ type: 'Profile', id: userId }],
-            async onQueryStarted(userId, { dispatch, queryFulfilled, getState }) {
-                try {
-                    const { data: profileData } = await queryFulfilled;
-                    console.log('Profile data received:', profileData);
 
-                    const state = getState();
-                    const currentUserId = state.user?.user?.id;
+        }),
 
-                    if (userId == currentUserId) {
-                        dispatch(setProfile(profileData));
-                    } else {
-                        dispatch(setViewedProfile(profileData));
-                        dispatch(setIsBlocked(profileData?.is_blocked || false));
-                        dispatch(setHasBlockedThisUser(profileData?.has_blocked_this_user || false));
-                    }
-                } catch (error) {
-                    console.error('Error fetching profile:', error);
+
+updateProfile: build.mutation({
+    query: ({ userId, ...profileData }) => ({
+        url: `/profile/update/${userId}`,
+        method: 'PUT',
+        body: profileData,
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+    }),
+    invalidatesTags: (result, error, { userId }) => [{ type: 'Profile', id: userId }],
+
+    async onQueryStarted({ userId, ...patch }, { dispatch, queryFulfilled }) {
+        // 1. Создаём "патч" для возможного отката
+        const patchResult = dispatch(
+            profileApi.util.updateQueryData('getProfile', userId, (draft) => {
+                // Нормализуем под вашу структуру ответа
+                if (draft?.data?.user) {
+                    Object.assign(draft.data.user, patch);
+                } else if (draft) {
+                    Object.assign(draft, patch);
                 }
-            },
-        }),
+            })
+        );
 
-        updateProfile: build.mutation({
-            query: ({ userId, ...profileData }) => ({
-                url: `/profile/update/${userId}`,
-                method: 'PUT',
-                body: profileData,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-            }),
-            invalidatesTags: (result, error, { userId }) => [{ type: 'Profile', id: userId }],
-            async onQueryStarted({ userId, ...patch }, { dispatch, queryFulfilled }) {
-                try {
-                    const { data: updatedData } = await queryFulfilled;
-                    dispatch(setProfile(updatedData));
-                } catch (err) {
-                    console.error('Update profile error:', err);
+        try {
+
+            await queryFulfilled;
+
+        } catch {
+
+            patchResult.undo();
+            console.error('Update profile failed, rolled back');
+        }
+    },
+}),
+blockUser: build.mutation({
+    query: (userId) => ({
+        url: `/profiles/${userId}/block`,
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+    }),
+    invalidatesTags: (result, error, userId) => [
+        { type: 'Profile', id: userId },
+        'BlockedUsers'
+    ],
+
+    async onQueryStarted(userId, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+            profileApi.util.updateQueryData('getProfile', userId, (draft) => {
+
+                if (draft?.data?.user) {
+                    draft.data.user.is_blocked = true;
+                    draft.data.user.has_blocked_this_user = true;
+                } else if (draft) {
+                    draft.is_blocked = true;
+                    draft.has_blocked_this_user = true;
                 }
-            },
-        }),
+            })
+        );
 
-        blockUser: build.mutation({
-            query: (userId) => ({
-                url: `/profiles/${userId}/block`,
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-            }),
-            invalidatesTags: (result, error, { userId }) => [
-                { type: 'Profile', id: userId },
-                'BlockedUsers'
-            ],
-        }),
+        try {
+            await queryFulfilled;
+        } catch {
+            patchResult.undo();
+        }
+    },
+}),
 
-        unblockUser: build.mutation({
-            query: (userId) => ({
-                url: `/profiles/${userId}/unblock`,
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-            }),
-            invalidatesTags: (result, error, { userId }) => [
-                { type: 'Profile', id: userId },
-                'BlockedUsers'
-            ],
-        }),
 
-        getBlockedUsers: build.query({
-            query: () => '/blocked-users',
-            providesTags: (result) => {
-                if (result && result.blocked_users && Array.isArray(result.blocked_users)) {
-                    return result.blocked_users.map(({ id }) => ({ type: 'BlockedUsers', id }));
+unblockUser: build.mutation({
+    query: (userId) => ({
+        url: `/profiles/${userId}/unblock`,
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+    }),
+    invalidatesTags: (result, error, userId) => [
+        { type: 'Profile', id: userId },
+        'BlockedUsers'
+    ],
+
+    async onQueryStarted(userId, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+            profileApi.util.updateQueryData('getProfile', userId, (draft) => {
+                if (draft?.data?.user) {
+                    draft.data.user.is_blocked = false;
+                    draft.data.user.has_blocked_this_user = false;
+                } else if (draft) {
+                    draft.is_blocked = false;
+                    draft.has_blocked_this_user = false;
                 }
-                return ['BlockedUsers'];
-            },
-            async onQueryStarted(_, { dispatch, queryFulfilled }) {
-                try {
-                    const { data: blockedData } = await queryFulfilled;
-                    if (blockedData.success && blockedData.blocked_users) {
-                        dispatch(setBlockedUsers(blockedData.blocked_users));
-                    }
-                } catch (err) {
-                    console.error('Get blocked users error:', err);
-                }
-            },
-        }),
+            })
+        );
+
+        try {
+            await queryFulfilled;
+        } catch {
+            patchResult.undo();
+        }
+    },
+}),
+
+
+getBlockedUsers: build.query({
+    query: () => '/blocked-users',
+    providesTags: (result) => {
+        if (result?.blocked_users?.length) {
+            return result.blocked_users.map(({ id }) => ({ type: 'BlockedUsers', id }));
+        }
+        return ['BlockedUsers'];
+    },
+
+}),
 
 
         getAllProfiles: build.query({

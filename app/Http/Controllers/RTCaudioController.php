@@ -26,23 +26,15 @@ class RTCaudioController extends Controller
 
     public function sendMessageAudio(Request $request)
 {
-
-
         $validated = $request->validate([
             'audio_mess' => 'required|file|mimes:audio/mpeg,mp3,wav,aac,webm,ogg,opus|max:10240',
             'receiver_id' => 'required|integer|exists:users,id',
         ]);
-
-
-
         $message = $this->audioService->createAudioMessage($validated);
-
         return response()->json([
             'success' => true,
             'data' => $message
         ]);
-
-
 }
     public function getConversationAudio(Request $request, $otherUserId)
     {
@@ -56,14 +48,9 @@ class RTCaudioController extends Controller
     {
         $userId = Auth::id();
 
-        try {
+
             $this->audioService->deleteMessage($messageId, $userId);
             return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 404);
-        }
+
     }
 }

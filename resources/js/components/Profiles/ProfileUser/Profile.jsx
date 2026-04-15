@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Avatar from '../AvatarProfile/AvatarProfile';
@@ -7,11 +6,11 @@ import { useGetProfileQuery } from '../../../api/modules/profileApi';
 import ErrorProfile from '../../../UI/Profile/ErrorProfile';
 const Profile = () => {
     const authUser = useSelector(state => state.user?.user);
-    const oauthUser = useSelector(state => state.oauth?.user);
-    const profile = useSelector(state => state.profile);
+
+
 
     const {
-        data: profileData,
+        data: profileResponse,
         isLoading,
         error,
         refetch
@@ -22,37 +21,16 @@ const Profile = () => {
         refetchOnReconnect: true,
     })
 
-    const getDisplayName = () => {
-
-        if (profileData?.user?.name) return profileData.user.name;
 
 
-        if (profileData?.name) return profileData.name;
+    const profile = profileResponse?.data?.profile || profileResponse;
 
-
-        if (profile?.name) return profile.name;
-
-
-        if (authUser?.name) return authUser.name;
-
-
-        if (oauthUser?.name) return oauthUser.name;
-
-
-        return 'Пользователь';
-    };
-    useEffect(() => {
-        if (authUser?.id) {
-            refetch();
-        }
-    }, [authUser?.id, refetch]);
-    const displayName = getDisplayName();
 
 
     const getRegistrationDate = () => {
-        const dateSource = profileData?.user?.created_at
-            || profileData?.created_at
-            || profile?.created_at;
+        const dateSource =
+        profileData?.data?.user?.created_at
+
 
         return dateSource
             ? new Date(dateSource).toLocaleDateString('ru-RU')
@@ -71,7 +49,6 @@ const Profile = () => {
     );
 
     if (error) {
-
         return <ErrorProfile onClick={refetch} message="Ошибка профиля" />;
     }
 
@@ -85,7 +62,7 @@ const Profile = () => {
 
                 <div className="w-full flex-1 flex flex-col items-center md:items-start text-center md:text-left">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 w-full">
-                        {displayName}
+                        {profile.name}
                     </h1>
 
                     <div className="w-full max-w-md mx-auto md:mx-0">

@@ -29,20 +29,31 @@ const UserProfile = () => {
     const { userId } = useParams();
 
     const currentUser = useSelector(state => state.user.user);
-    const { viewedProfile,  error, isBlocked, hasBlockedThisUser} = useSelector(state => state.profile.profile);
+
+
+
 
     const {
-        data: profileData,
+        data: profile,
         isLoading: isProfileLoading,
+        error: profileError,
         refetch: refetchProfile
-    } = useGetProfileQuery(userId, { skip: !userId });
-    const profile = profileData || viewedProfile;
-    const canShowActions = currentUser?.id  || profile.id;
+    } = useGetProfileQuery(userId, {
+        skip: !userId,
+        selectFromResult: (result) => ({
+            ...result,
+            data: result.data?.data?.user || result.data,
+        }),
+    });
+
+    const isBlocked = profile?.is_blocked || false;
+    const hasBlockedThisUser = profile?.has_blocked_this_user || false;
+
+
     const {
         privacyInfo,
         isLoading: isPrivacyLoading,
         error: privacyError,
-        friendsCount,
         refetch: refetchPrivacy
     } = useProfilePrivacy(userId);
     const { friends } = useSelector(state => state.friends);
@@ -59,19 +70,7 @@ const UserProfile = () => {
     const [unblockUserMutation] = useUnblockUserMutation();
 
     const isLoading = isProfileLoading || isPrivacyLoading || isFriendshipLoading;
-useEffect(() => {
-    console.log('🔍 UserProfile debug:', {
-        userId,
-        currentUser: currentUser?.id,
-        profileData: !!profileData,
-        viewedProfile: !!viewedProfile,
-        profile: profile?.user_id,
-        privacyInfo,
-        canViewProfile: privacyInfo?.canViewProfile,
-        isBlocked,
-        friendshipStatus,
-    });
-}, [userId, currentUser, profileData, viewedProfile]);
+
 
 
 
@@ -83,13 +82,9 @@ useEffect(() => {
 
 
             if (!hasBlockedThisUser) {
-                await blockUserMutation(profile.user_id).unwrap();
-                dispatch(setIsBlocked(true));
-                dispatch(setHasBlockedThisUser(true));
+                await blockUser(profile.id).unwrap(); 
             } else {
-                await unblockUserMutation(profile.user_id).unwrap();
-                dispatch(setIsBlocked(false));
-                dispatch(setHasBlockedThisUser(false));
+                await unblockUser(profile.id).unwrap();
             }
             refetchProfile();
             refetchPrivacy();
@@ -145,6 +140,7 @@ useEffect(() => {
         return <BlockedView />;
     }
 
+
     if (!privacyInfo.canViewProfile) {
         return (
             <PrivateProfileView
@@ -173,7 +169,7 @@ useEffect(() => {
 
 
                         <div className="flex flex-col gap-3 mt-5">
-                            {canShowActions && (
+                            {profile && (
                              <>
                              <FriendButton
                                  friendshipStatus={friendshipStatus}
@@ -183,8 +179,8 @@ useEffect(() => {
                              />
 
                              <MessageButton
-                                 recipientId={profile.user_id}
-                                 recipientName={profile.user?.name}
+                                 recipientId={profile.data.user_id}
+                                 recipientName={profile.data?.name}
                                  disabled={false}
                              />
 
@@ -195,24 +191,27 @@ useEffect(() => {
                              />
                          </>
                             )}
-                            <ProfileDetail userId={profile?.user_id} />
+                            <ProfileDetail userId={profile?.data.user_id} />
                         </div>
 
 
-                        {profile?.user && (
-                            <div className="flex-1 mt-3">
-                                <h3 className="text-xl font-semibold text-white mb-4">Информация об аккаунте</h3>
-                                <div className="space-y-2">
-                                    <div className="flex items-center text-lg text-white">
-                                        <strong className="text-gray-300 font-medium min-w-32">ID пользователя:</strong>
-                                        {profile.user.id}
-                                    </div>
-                                    <div className="flex items-center text-lg text-white">
-                                        <strong className="text-white font-semibold text-xl min-w-32">{profile.user.name}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+
+    <div className="flex-1 mt-3">
+        <h3 className="text-xl font-semibold text-white mb-4">Информация об аккаунте</h3>
+        <div className="space-y-2">
+            <div className="flex items-center text-lg text-white">
+                <strong className="text-gray-300 font-medium min-w-32">ID пользователя:</strong>
+                {profile.data.user.id}
+            </div>
+            <div className="flex items-center text-lg text-white">
+                <strong className="text-white font-semibold text-xl min-w-32">
+                    {profile.data.name}
+                </strong>
+            </div>
+
+        </div>
+    </div>
+
                     </div>
                 </div>
                 {privacyInfo.canViewImages ? (

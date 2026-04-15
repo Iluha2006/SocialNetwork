@@ -1,13 +1,15 @@
 import { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import {  removeMessage} from '../store/ChatMessengers/chatSlice';
 import { deleteAudioMessage, getConversationAudio } from '../store/Files/AudioMessage';
+
+import { useDeleteMessageMutation } from '../api/modules/messages';
 
 const useMessageDeletion = (userId) => {
     const dispatch = useDispatch();
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
     const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+    const [deleteMessage] = useDeleteMessageMutation();
 
     const handleDeleteMessage = useCallback(async (messageId, messageType, senderId, receiverId) => {
         setIsDeleting(true);
@@ -24,7 +26,7 @@ const useMessageDeletion = (userId) => {
                     dispatch(getConversationAudio(parseInt(userId)));
                 }
             } else {
-                result = await dispatch(removeMessage(messageId));
+               result = await deleteMessageMutation(messageId);
             }
 
             if (result?.success) {

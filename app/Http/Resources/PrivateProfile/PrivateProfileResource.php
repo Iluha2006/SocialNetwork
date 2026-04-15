@@ -25,13 +25,9 @@ class PrivateProfileResource extends JsonResource
             'success' => true,
             'profile' => [
                 'user_id' => $profile['user_id'] ?? $profile->user_id,
-                'name' => $profile['name'] ?? $profile->name,
-                'email' => $profile['email'] ?? $profile->email,
-                'avatar' => $profile['avatar'] ?? $profile->avatar,
-                'bio' => $profile['bio'] ?? $profile->bio,
-                'created_at' => $profile['created_at'] ?? $profile->created_at,
+
                 'friends' => $this->when(isset($profile['friends']), $profile['friends']),
-                'friends_count' => $this->when(isset($profile['friends_count']), $profile['friends_count']),
+                //'friends_count' => $this->when(isset($profile['friends_count']), $profile['friends_count']),
             ],
             'privacy' => $this->privacyMeta ?? [],
             'privacy_settings' => $this->privacySettings ?? [],

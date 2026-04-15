@@ -9,8 +9,7 @@ import ModalProfile from '../../UI/Profile/ModalProfile';
 
 const Header = () => {
   const navigate = useNavigate();
-  const profileRtk = useSelector(state => state.profile.profile);
-  const oauthUser = useSelector(state => state.oauth?.user);
+
   const user = useSelector(state => state.user?.user);
   const isAuthenticated = useSelector(state => state.user?.isAuthenticated);
 

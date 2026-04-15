@@ -17,7 +17,7 @@ const oauthSlice = createSlice({
     reducers: {
         setOAuthUser: (state, action) => {
             state.user = action.payload;
-            state.isAuthenticated = !!action.payload;
+            state.isAuthenticated = action.payload;
             state.error = null;
         },
         setOAuthLoading: (state, action) => {

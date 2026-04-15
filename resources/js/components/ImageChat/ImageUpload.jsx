@@ -6,8 +6,8 @@ import './ImageUpload.css';
 const ImageChat = (props) => {
 
 const {
-    onImageSelect,
-     previewUrl,
+      onImageSelect,
+      previewUrl,
       forChatBackground=false ,
       onBackgroundSet
 }=props
