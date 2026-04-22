@@ -23,13 +23,13 @@ const Profile = () => {
 
 
 
-    const profile = profileResponse?.data?.profile || profileResponse;
+    const profile = profileResponse?.data || profileResponse;
 
 
 
     const getRegistrationDate = () => {
         const dateSource =
-        profileData?.data?.user?.created_at
+       profile?.user.created_at
 
 
         return dateSource

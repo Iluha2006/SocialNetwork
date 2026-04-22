@@ -37,12 +37,12 @@ export const authApi = createApi({
                             }
                         }));
 
-
-                        dispatch(
-                            profileApi.util.updateQueryData('getProfile', user.id, (draft) => {
-
-                                if (draft) Object.assign(draft, user);
-                            })
+                      dispatch(
+                            profileApi.util.upsertQueryData(
+                                'getProfile',
+                                user.id,
+                                { data: user }
+                            )
                         );
 
 
@@ -83,11 +83,12 @@ export const authApi = createApi({
                     if (user) {
                         dispatch(setAuthData({ user }));
 
-                        dispatch(
-                            profileApi.util.updateQueryData('getProfile', user.id, (draft) => {
-
-                                if (draft) Object.assign(draft, user);
-                            })
+                      dispatch(
+                            profileApi.util.upsertQueryData(
+                                'getProfile',
+                                user.id,
+                                { data: user }
+                            )
                         );
                         dispatch(
                             profileApi.endpoints.getProfile.initiate(user.id, {
@@ -146,11 +147,6 @@ export const authApi = createApi({
                     } catch (echoErr) {
                         console.warn('Echo disconnect error:', echoErr);
                     }
-                    dispatch(clearAuth());
-
-
-                    dispatch(clearProfile());
-
 
                     dispatch(profileApi.util.resetApiState());
                     dispatch(authApi.util.resetApiState());
@@ -162,7 +158,7 @@ export const authApi = createApi({
             },
 
 
-            invalidatesTags: ['Auth', 'Profile', 'BlockedUsers'],
+            invalidatesTags: ['Auth']
         }),
     }),
 });

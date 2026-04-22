@@ -47,11 +47,15 @@ export const oauthApi = createApi({
                             provider: 'yandex',
                             ...data
                         }));
-                        dispatch(setProfile({
-                            user_id: data.user.id,
-                            name: data.user.name,
-                            email: data.user.email,
-                        }));
+
+
+                        dispatch(
+                            profileApi.util.upsertQueryData(
+                                'getProfile',
+                                data.user.id,
+                                { data: data.user }
+                            )
+                        );
                         const { getEcho } = await import('../echo');
                         getEcho();
 

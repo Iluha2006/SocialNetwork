@@ -14,9 +14,5 @@ use App\Http\Controllers\CarerController;
 |
 */
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/create-carers', [CarerController::class, 'store']);
-    Route::put('/update-carers/{id}', [CarerController::class, 'update']);
-    Route::get('/carers/{userId}', [CarerController::class, 'index']);
-});
+
 

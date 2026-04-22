@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useSelector } from 'react-redux';
-
 import { useEffect } from 'react';
 import ThemeToggle from '../../components/ThemeSocialNetwork/ThemeToggle';
+import { useGetProfileQuery } from '../../api/modules/profileApi';
 
 export default function ModalProfile({
   isOpen,
@@ -12,10 +11,52 @@ export default function ModalProfile({
   onNavigate,
   isLogout = false
 }) {
+  const authUser = useSelector(state => state.user?.user);
+  const oauthUser = useSelector(state => state.oauth?.user);
 
 
-    const profile  = useSelector(state => state.profile.profile);
-    const oauthUser = useSelector(state => state.oauth?.user);
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading
+  } = useGetProfileQuery(authUser?.id, {
+    skip: !authUser?.id,
+  });
+
+
+  const profileData = profileResponse?.data || profileResponse;
+
+
+  const getAvatar = () => {
+
+    if (profileData?.avatar) {
+      return profileData.avatar;
+    }
+    if (profileData?.user?.avatar) {
+      return profileData.user.avatar;
+    }
+    if (oauthUser?.avatar) {
+      return oauthUser.avatar;
+    }
+    return null;
+  };
+
+
+  const getUserName = () => {
+    if (profileData?.name) {
+      return profileData.name;
+    }
+    if (profileData?.user?.name) {
+      return profileData.user.name;
+    }
+    if (oauthUser?.name) {
+      return oauthUser.name;
+    }
+    if (authUser?.name) {
+      return authUser.name;
+    }
+    return 'Пользователь';
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -40,21 +81,26 @@ export default function ModalProfile({
 
   if (!isOpen) return null;
 
+  const avatarUrl = getAvatar();
+  const userName = getUserName();
+
   return (
-    <div className=" absolute inset-0 z-50 flex justify-end items-start pt-20 mr-6 ">
+    <div className="absolute inset-0 z-50 flex justify-end items-start pt-20 mr-6">
       <div
         className="modal-profile-content text-amber-50 rounded-xl w-48 mr-5 shadow-lg animate-in fade-in-0 zoom-in-95"
         style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }}
       >
-
         <div className="flex justify-between items-center px-5 py-4 border-b border-gray-700">
           <h3 className="text-base font-semibold text-amber-50 m-0">Меню профиля</h3>
         </div>
 
-
         <div className="flex items-center px-5 py-4 border-b border-gray-700">
-          {profile?.data.avatar ? (
-            <img src={profile.data.avatar} className="w-12 h-12 rounded-full object-cover mr-3" alt="Аватар" />
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              className="w-12 h-12 rounded-full object-cover mr-3"
+              alt="Аватар"
+            />
           ) : (
             <div className="w-12 h-12 rounded-full mr-3">
               <img
@@ -66,10 +112,11 @@ export default function ModalProfile({
           )}
           <div className="flex flex-col">
             <span className="font-semibold text-base text-amber-50 mb-1">
-              {profile?.data.name || oauthUser?.name || 'Пользователь'}
+              {isProfileLoading ? 'Загрузка...' : userName}
             </span>
           </div>
         </div>
+
         <div className="py-2">
           <button
             className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-amber-50 text-sm hover:bg-gray-800"
@@ -85,7 +132,7 @@ export default function ModalProfile({
             <span className="text-amber-50">Настройки</span>
           </button>
 
-          <ThemeToggle/>
+          <ThemeToggle />
 
           <button
             className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-red-400 text-sm hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
