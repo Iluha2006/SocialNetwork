@@ -27,11 +27,14 @@ use Laravel\Passport\HasApiTokens;
 
 
     protected $casts = [
-
         'last_seen' => 'datetime',
-        'online_status' => 'boolean',
     ];
 
+
+    public function LikeUser(){ 
+
+        return $this->hasMany(LikesPost::class);
+    }
     public function oauthProviders(): HasMany
     {
         return $this->hasMany(OAuthProvider::class);
@@ -104,6 +107,25 @@ use Laravel\Passport\HasApiTokens;
     }
 
 
+
+    public function setOnline(): void
+    {
+        $this->online_status = 'online';
+        $this->last_seen = now();
+        $this->save();
+    }
+
+    public function setOffline(): void
+    {
+        $this->online_status = 'offline';
+        $this->last_seen = now();
+        $this->save();
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->online_status === 'online';
+    }
 
     public function blocks(): HasMany
     {

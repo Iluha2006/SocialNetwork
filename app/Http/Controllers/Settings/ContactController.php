@@ -2,60 +2,52 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Contacts\CreateContactCommand;
+use App\Commands\Contacts\DeleteContactCommand;
+use App\Commands\Contacts\UpdateContactCommand;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\ContactProfile;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Contact\CreateContactRequest;
+use App\Queries\Contacts\GetContactsQuery;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+
 class ContactController extends Controller
 {
-
-
-
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
+    ) {}
 
     public function index($userId)
     {
-
-
-
-
-        $contacts = ContactProfile::where('user_id', $userId)->get();
-        return response()->json($contacts);
+        return response()->json($this->queryBus->ask(new GetContactsQuery((int) $userId)));
     }
 
     public function store(CreateContactRequest $request)
     {
         $validatedData = $request->validated();
-        $validatedData['user_id'] = Auth::id();
 
+        try {
+            $contactData = $this->commandBus->dispatch(
+                new CreateContactCommand($validatedData, Auth::id())
+            );
 
-        $existingContact = ContactProfile::where('user_id', Auth::id())->first();
-
-        if ($existingContact) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Контакт успешно создан',
+                'data' => $contactData,
+            ], 201);
+        } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'У вас уже есть контактная информация. Вы можете только обновить существующую.'
+                'message' => $e->getMessage(),
             ], 422);
         }
-
-
-        $existingPhone = ContactProfile::where('phone', $validatedData['phone'])->first();
-        if ($existingPhone) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Этот номер телефона уже используется другим пользователем.'
-            ], 422);
-        }
-
-        $contact = ContactProfile::create($validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Контакт успешно создан',
-            'data' => $contact
-        ], 201);
     }
+
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -67,46 +59,33 @@ class ContactController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка валидации',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $validatedData = $validator->validated();
-        $contact = ContactProfile::find($id);
+        try {
+            $contactData = $this->commandBus->dispatch(
+                new UpdateContactCommand((int) $id, $validator->validated())
+            );
 
-        if (!$contact) {
             return response()->json([
-                'success' => false,
-                'message' => 'Контакт не найден'
-            ], 404);
+                'success' => true,
+                'message' => 'Контакт успешно обновлен',
+                'data' => $contactData,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         }
-
-
-        $contact->update($validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Контакт успешно обновлен',
-            'data' => $contact
-        ]);
     }
 
     public function destroy($id)
     {
-        $contact = ContactProfile::find($id);
+        try {
+            $this->commandBus->dispatch(new DeleteContactCommand((int) $id));
 
-        if (!$contact) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Контакт не найден'
-            ], 404);
+            return response()->json(['success' => true, 'message' => 'Контакт успешно удален']);
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         }
-
-        $contact->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Контакт успешно удален'
-        ]);
     }
 }

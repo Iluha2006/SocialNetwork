@@ -2,18 +2,24 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Carer\CreateCarerCommand;
+use App\Commands\Carer\UpdateCarerCommand;
 use App\Http\Controllers\Controller;
-use App\Models\Carer;
+use App\Queries\Carer\GetCarersQuery;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CarerController extends Controller
 {
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
+    ) {}
+
     public function index($userId)
     {
-        $carers = Carer::where('user_id', $userId)->get();
-
-        return response()->json($carers);
+        return response()->json($this->queryBus->ask(new GetCarersQuery((int) $userId)));
     }
 
     public function store(Request $request)
@@ -24,31 +30,18 @@ class CarerController extends Controller
             'work_experience' => 'nullable|string',
             'skills_work' => 'nullable|string',
             'position' => 'nullable|string|max:255',
-
         ]);
 
-        $user = Auth::guard('api')->user() ?? Auth::guard('web')->user();
+        try {
+            $result = $this->commandBus->dispatch(new CreateCarerCommand($request));
 
-        $existingCarer = Carer::where('user_id', $user->id)->first();
-
-        if ($existingCarer) {
+            return response()->json($result, 201);
+        } catch (\RuntimeException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'У вас уже есть информация об опыте работы. Вы можете только обновить существующую.'
+                'message' => $e->getMessage(),
             ], 422);
         }
-
-            $carer = Carer::create([
-                'user_id' => $user->id,
-                'city' => $request->city,
-                'place_work' => $request->place_work,
-                'work_experience' => $request->work_experience,
-                'skills_work' => $request->skills_work,
-                'position' => $request->position,
-            ]);
-
-            return response()->json($carer, 201);
-
     }
 
     public function update(Request $request, $id)
@@ -61,20 +54,8 @@ class CarerController extends Controller
             'position' => 'nullable|string|max:255',
         ]);
 
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json(['message' => 'User not authenticated'], 401);
-        }
-
-        $carer = Carer::where('id', $id)
-                     ->where('user_id', $user->id)
-                     ->firstOrFail();
-
-        $carer->update($request->all());
+        $carer = $this->commandBus->dispatch(new UpdateCarerCommand($request, (int) $id));
 
         return response()->json($carer);
     }
-
-
 }

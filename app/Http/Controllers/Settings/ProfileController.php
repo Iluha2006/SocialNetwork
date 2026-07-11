@@ -1,99 +1,91 @@
 <?php
 
 namespace App\Http\Controllers\Settings;
-use App\Http\Resources\Profile\ProfileResource;
-use App\Http\Resources\Profile\ProfileShowResource;
-use Illuminate\Support\Facades\Auth;
-use App\Contracts\Profile\ProfileServiceInterface;
 
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Profile\BlockUserCommand;
+use App\Commands\Profile\DeleteProfileCommand;
+use App\Commands\Profile\UnblockUserCommand;
+use App\Commands\Profile\UpdateAvatarCommand;
+use App\Commands\Profile\UpdateProfileCommand;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Profile\UpdateProfileRequest;
-use App\Http\Resources\Profile\ProfileCollection;
-use App\Http\Resources\Profile\ProfileDetailResource;
-use App\Http\Resources\BlockedUser\BlockedUserResource;
-
+use App\Queries\Profile\GetAllProfilesQuery;
+use App\Queries\Profile\GetBlockedUsersQuery;
+use App\Queries\Profile\GetFriendsQuery;
+use App\Queries\Profile\GetProfileQuery;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
     public function __construct(
-        private readonly ProfileServiceInterface $profileService
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
     ) {}
 
     public function show($id)
     {
+        $profileShowData = $this->queryBus->ask(new GetProfileQuery((int) $id));
 
-        $data = $this->profileService->show((int) $id);
-
-        return (new ProfileShowResource($data['profile']))
-        ->additional([
-            'is_blocked' => $data['is_blocked'],
-            'has_blocked_this_user' => $data['has_blocked_this_user'],
+        return response()->json([
+            'profile' => $profileShowData->profile,
+            'is_blocked' => $profileShowData->is_blocked,
+            'has_blocked_this_user' => $profileShowData->has_blocked_this_user,
         ]);
     }
 
     public function index()
     {
-        $profiles = $this->profileService->index();
+        $profiles = $this->queryBus->ask(new GetAllProfilesQuery());
 
-        return (new ProfileCollection($profiles))->response();
+        return response()->json(['data' => $profiles]);
     }
 
     public function block($userId)
     {
-
-            $result = $this->profileService->block((int) $userId);
-            return response()->json($result);
-
+        return response()->json(
+            $this->commandBus->dispatch(new BlockUserCommand((int) $userId))
+        );
     }
 
     public function unblock($userId)
     {
-
-            $result = $this->profileService->unblock((int) $userId);
-            return response()->json($result);
-
+        return response()->json(
+            $this->commandBus->dispatch(new UnblockUserCommand((int) $userId))
+        );
     }
 
     public function update(UpdateProfileRequest $request, $id)
     {
+        $profileData = $this->commandBus->dispatch(
+            new UpdateProfileCommand($request->validated(), (int) $id)
+        );
 
-        $validatedData = $request->validated();
-        $updatedProfile = $this->profileService->update($validatedData, (int) $id);
-
-        return (new ProfileResource($updatedProfile))->response();
+        return response()->json($profileData);
     }
 
     public function destroy($id)
     {
+        $this->commandBus->dispatch(new DeleteProfileCommand((int) $id));
 
-            $this->profileService->destroy((int) $id);
-            return response()->json([
-                'message' => 'Профиль успешно удален',
-            ], 200);
-
+        return response()->json(['message' => 'Профиль успешно удален'], 200);
     }
 
     public function updateAvatar(Request $request)
     {
-
-            $result = $this->profileService->updateAvatar($request);
-            return response()->json($result);
-
+        return response()->json(
+            $this->commandBus->dispatch(new UpdateAvatarCommand($request))
+        );
     }
 
     public function getBlockedUsers()
     {
-
-            $result = $this->profileService->getBlockedUsers();
-            return response()->json($result);
-
+        return response()->json($this->queryBus->ask(new GetBlockedUsersQuery()));
     }
 
     public function getFriends($id)
     {
-        $friends = $this->profileService->getFriends((int) $id);
-        return response()->json($friends);
+        return response()->json($this->queryBus->ask(new GetFriendsQuery((int) $id)));
     }
-
 }

@@ -29,11 +29,11 @@ class ProcessProfileImageUploadJob implements ShouldQueue
         $directory = "profile/{$this->userId}/photo";
         $fullPath = "{$directory}/{$this->fileName}";
 
-        $contents = Storage::disk('local')->get($this->tempPath);
+        $contents = Storage::disk('s3')->get($this->tempPath);
         Storage::disk('s3')->put($fullPath, $contents, 'public');
-        Storage::disk('local')->delete($this->tempPath);
+        Storage::disk('s3')->delete($this->tempPath);
 
-        $imageUrl = env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $fullPath;
+        $imageUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $fullPath;
 
         ImageProfile::create([
             'user_id' => $this->userId,

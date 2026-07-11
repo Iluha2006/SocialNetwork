@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Resources\Post;
 
 use Illuminate\Http\Request;
@@ -9,23 +10,25 @@ class PostResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+
+        $profile = $this->user?->profile;
+        
         return [
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
-            'images' => $this->images,
-            'videos' => $this->videos,
+            'images' => $this->images ,
+            'videos' => $this->videos ,
             'user_id' => $this->user_id,
+            'likes_count' => $this->likes_count,
             'created_at' => $this->created_at,
-            'user' => $this->whenLoaded('user', fn () => [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-                'profile' => $this->user->profile ? [
-                    'id' => $this->user->profile->id,
-                    'avatar' => $this->user->profile->avatar,
-                    'name' => $this->user->profile->name,
-                ] : null,
-            ]),
+            'profile' => $profile ? [
+                'id' => $profile->id,
+                'user_id' => $profile->user_id,
+                'name' => $profile->name,
+                'avatar' => $profile->avatar,
+                'bio' => $profile->bio,
+            ] : null,
         ];
     }
 }

@@ -12,7 +12,7 @@ class BroadcastServiceProvider extends ServiceProvider
     {
 
         Broadcast::routes([
-            'middleware' => ['web'],
+            'middleware' => ['web', 'auth.token'],
         ]);
         require base_path('routes/channels.php');
 

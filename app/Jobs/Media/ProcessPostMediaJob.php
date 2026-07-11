@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessPostMediaJob implements ShouldQueue
@@ -38,23 +39,30 @@ class ProcessPostMediaJob implements ShouldQueue
 
         if ($this->imageTempPath && $this->imageFileName) {
             $path = "user_media/{$post->user_id}/images/{$this->imageFileName}";
-            $contents = Storage::disk('local')->get($this->imageTempPath);
+
+            $contents = Storage::disk('s3')->get($this->imageTempPath);
             Storage::disk('s3')->put($path, $contents, 'public');
-            Storage::disk('local')->delete($this->imageTempPath);
-            $imageUrl = env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $path;
+            Storage::disk('s3')->delete($this->imageTempPath);
+
+            $imageUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
         }
 
         if ($this->videoTempPath && $this->videoFileName) {
             $path = "user_media/{$post->user_id}/videos/{$this->videoFileName}";
-            $contents = Storage::disk('local')->get($this->videoTempPath);
+
+            $contents = Storage::disk('s3')->get($this->videoTempPath);
             Storage::disk('s3')->put($path, $contents, 'public');
-            Storage::disk('local')->delete($this->videoTempPath);
-            $videoUrl = env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $path;
+            Storage::disk('s3')->delete($this->videoTempPath);
+
+            $videoUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
         }
 
-        $post->update(array_filter([
-            'images' => $imageUrl,
-            'videos' => $videoUrl,
-        ]));
+        $post->update([
+    'images' => $imageUrl,
+    'videos' => $videoUrl,
+]);
+
+        Cache::forget('posts:all');
+        Cache::forget('posts:user:' . $post->user_id);
     }
 }

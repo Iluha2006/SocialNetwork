@@ -17,12 +17,6 @@ class UpdateOnlineStatus
         if (Auth::check()) {
             $user = Auth::user();
             $user->update(['last_seen' => now()]);
-
-
-            if (!$user->online_status) {
-                $user->setOnline();
-                broadcast(new \App\Events\OnlineUser($user));
-            }
         }
 
         return $response;
