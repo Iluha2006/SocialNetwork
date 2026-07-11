@@ -4,14 +4,14 @@ namespace App\Events;
 
 use App\Models\Message;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
-class PrivateMessage implements ShouldBroadcast
+class PrivateMessage implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets ;
+    use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
 
@@ -40,6 +40,7 @@ class PrivateMessage implements ShouldBroadcast
             'content' => $this->message->content,
             'images' => $this->message->images,
             'file' => $this->message->file,
+            'file_name' => $this->message->file_name,
             'sender_id' => $this->message->sender_id,
             'receiver_id' => $this->message->receiver_id,
             'sender' => [

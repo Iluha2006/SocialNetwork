@@ -7,11 +7,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CallAccepted implements ShouldBroadcast
+class CallAccepted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -33,17 +33,21 @@ class CallAccepted implements ShouldBroadcast
     {
         return [
             'call_id' => $this->call->id,
-            'sdp_answer' => $this->sdpAnswer,
+            'caller_id' => $this->call->caller_id,
+            'receiver_id' => $this->call->receiver_id,
+            'call_type' => $this->call->call_type,
+            'sdp_answer' => $this->call->sdp_answer ? json_decode($this->call->sdp_answer, true) : $this->sdpAnswer,
             'accepted_at' => $this->call->started_at->toISOString(),
             'receiver' => [
                 'id' => $this->call->receiver->id,
                 'name' => $this->call->receiver->name,
+                'avatar' => $this->call->receiver->profile?->avatar,
             ],
         ];
     }
 
     public function broadcastAs()
     {
-        return 'call.accepted';
+        return 'call-accept';
     }
 }

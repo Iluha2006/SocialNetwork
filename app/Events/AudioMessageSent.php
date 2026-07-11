@@ -3,11 +3,11 @@
 namespace App\Events;
 use App\Models\AudioMessage;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Queue\SerializesModels;
-class AudioMessageSent implements ShouldBroadcast
+class AudioMessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
     public $message;
@@ -19,7 +19,7 @@ class AudioMessageSent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('user.' . $this->message->receiver_id);
+        return new PrivateChannel('audio.' . $this->message->receiver_id);
     }
 
     public function broadcastAs()

@@ -8,11 +8,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class IncomingCall implements ShouldBroadcast
+class IncomingCall implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -34,13 +34,16 @@ class IncomingCall implements ShouldBroadcast
     {
         return [
             'call_id' => $this->call->id,
+            'caller_id' => $this->call->caller_id,
+            'receiver_id' => $this->call->receiver_id,
             'caller' => [
                 'id' => $this->caller->id,
                 'name' => $this->caller->name,
                 'email' => $this->caller->email,
+                'avatar' => $this->caller->profile?->avatar,
             ],
             'call_type' => $this->call->call_type,
-            'sdp_offer' => $this->call->sdp_offer,
+            'sdp_offer' => $this->call->sdp_offer ? json_decode($this->call->sdp_offer, true) : null,
             'created_at' => $this->call->created_at->toISOString(),
         ];
     }
