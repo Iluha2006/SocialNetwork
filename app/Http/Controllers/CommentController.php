@@ -2,49 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CommentPost;
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Comments\CreateCommentCommand;
+use App\Commands\Comments\DeleteCommentCommand;
 use App\Models\Post;
+use App\Queries\Comments\GetPostCommentsQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
+    ) {}
+
     public function store(Request $request, Post $post)
     {
-        $request->validate([
-            'comment' => 'required|string|max:1000'
-        ]);
+        $request->validate(['comment' => 'required|string|max:1000']);
 
-        $user = $request->user();
+        $user = Auth::user();
+       
 
-        $comment = CommentPost::create([
-            'comment' => $request->comment,
-            'user_id' => $user->id,
-            'post_id' => $post->id
-        ])->load('user', 'user.profile');
+        $commentData = $this->commandBus->dispatch(
+            new CreateCommentCommand($post->id, $request->comment, $user->id)
+        );
 
         return response()->json([
             'success' => true,
-            'comment' => $comment
+            'comment' => $commentData,
         ]);
     }
+
     public function index(Post $post)
     {
-        $comments = $post->comments()->with('user')->with('user.profile')->latest()->get();
-        return response()->json([
-            'comments' => $comments
-        ]);
+        return response()->json(
+            $this->queryBus->ask(new GetPostCommentsQuery($post))
+        );
     }
 
-
-    public function destroy(Request $request, $commentId)
+    public function destroy($commentId)
     {
-        $request->user();
-        $comment = CommentPost::findOrFail($commentId);
-        $comment->delete();
+        $this->commandBus->dispatch(new DeleteCommentCommand((int) $commentId));
+
         return response()->json([
             'success' => true,
-            'message' => 'Сообщение удалено'
+            'message' => 'Сообщение удалено',
         ]);
     }
 }

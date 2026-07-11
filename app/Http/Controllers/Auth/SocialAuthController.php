@@ -94,9 +94,11 @@ class SocialAuthController extends Controller
 
     public function logout(Request $request)
     {
-
         if ($request->user()) {
-            $request->user()->token()->revoke();
+            $user = $request->user();
+            $user->setOffline();
+            event(new \App\Events\OnlineUser($user));
+            $user->token()->revoke();
         }
 
         return response()->json(['success' => true])

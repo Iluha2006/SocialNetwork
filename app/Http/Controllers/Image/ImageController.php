@@ -2,69 +2,44 @@
 
 namespace App\Http\Controllers\Image;
 
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Images\DeleteImageCommand;
+use App\Commands\Images\UploadImageCommand;
 use App\Http\Controllers\Controller;
-use App\Models\ImageProfile;
-use App\Models\User;
+use App\Queries\Images\GetUserImagesQuery;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 
 class ImageController extends Controller
 {
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
+    ) {}
+
     public function index($userId)
     {
-
-            $images = ImageProfile::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
-            return response()->json($images, 200);
-
+        return response()->json($this->queryBus->ask(new GetUserImagesQuery((int) $userId)), 200);
     }
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'profile_images' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-
-    ]);
-
-
-
-        $user = $request->user();
-        $imageUrl = null;
-
-        if ($request->hasFile('profile_images')) {
-            $image = $request->file('profile_images');
-            $filename = time() . '_' . $image->getClientOriginalName();
-$directory = "profile/{$user->id}/photo";
-$fullPath = "{$directory}/{$filename}";
-
-
-Storage::disk('s3')->put($fullPath, file_get_contents($image), 'public');
-
-
-$imageUrl = env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $fullPath;
-
-        }
-
-        $image = ImageProfile::create([
-            'user_id' => $user->id,
-            'path_image' => $imageUrl,
+    {
+        $request->validate([
+            'profile_images' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        $imageData = $this->commandBus->dispatch(new UploadImageCommand($request));
 
         return response()->json([
             'message' => 'Image uploaded successfully',
-            'path_image' => $image,
-
+            'path_image' => $imageData,
         ], 201);
+    }
 
-
-}
     public function destroy($id)
     {
+        $this->commandBus->dispatch(new DeleteImageCommand((int) $id));
 
-            $image = ImageProfile::findOrFail($id);
-            Storage::disk('s3')->delete($image->path_image);
-            $image->delete();
-            return response()->json(['message' => 'Image deleted successfully'], 200);
-
+        return response()->json(['message' => 'Image deleted successfully'], 200);
     }
 }

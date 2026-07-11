@@ -2,85 +2,100 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Call;
-use App\Models\User;
-use App\Services\CallService;
-use App\Events\IncomingCall;
-use App\Events\CallAccepted;
-use App\Events\CallRejected;
+use App\Buses\Contracts\CommandBusInterface;
+use App\Commands\Calls\AcceptCallCommand;
+use App\Commands\Calls\InitiateCallCommand;
 use App\Events\CallEnded;
-use App\Events\WebRTCOffer;
-use App\Events\Answer;
-use App\Events\WebRTCIceCandidate;
+use App\Events\CallRejected;
+use App\Models\Call;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Broadcast;
 
 class CallController extends Controller
 {
-    protected $callService;
-
-    public function __construct(CallService $callService)
-    {
-        $this->callService = $callService;
-    }
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+    ) {}
 
     public function initiateCall(Request $request)
-{
-    try {
+    {
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'call_type' => 'required|in:audio,video',
-            'sdp_offer' => 'required|array'
+            'sdp_offer' => 'required|array',
         ]);
 
+        try {
+            $result = $this->commandBus->dispatch(new InitiateCallCommand($request));
 
-        $result = $this->callService->initiateCall($request);
-
-          if (is_array($result) && isset($result['call'])) {
-
-            $call = $result['call'];
+            return response()->json($result);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to initiate call: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $caller = Auth::user();
-        $receiver = User::findOrFail($request->receiver_id);
-
-
-        broadcast(new IncomingCall($call, $caller));
-        broadcast(new WebRTCOffer($receiver->id, $request->sdp_offer, $caller->id));
-
-        return response()->json([
-            'call_id' => $call->id,
-            'status' => 'initiated',
-            'message' => 'Call initiated successfully'
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'error' => 'Failed to initiate call: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     public function acceptCall(Request $request, Call $call)
     {
-        $request->validate([
-            'sdp_answer' => 'required|array'
+        $request->validate(['sdp_answer' => 'required|array']);
+
+        $result = $this->commandBus->dispatch(
+            new AcceptCallCommand($call, $request->sdp_answer)
+        );
+
+        return response()->json($result);
+    }
+
+    public function rejectCall(Request $request, Call $call)
+    {
+        $call->update(['status' => 'rejected', 'ended_at' => now()]);
+        broadcast(new CallRejected($call));
+
+        return response()->json(['status' => 'rejected']);
+    }
+
+    public function endCall(Request $request, Call $call)
+    {
+        $call->endCall();
+        broadcast(new CallEnded($call));
+
+        return response()->json(['status' => 'ended']);
+    }
+
+    public function sendICECandidate(Request $request, Call $call)
+    {
+        $candidates = $call->ice_candidates ?? [];
+        $candidates[] = $request->candidate;
+        $call->update(['ice_candidates' => $candidates]);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function getCallStatus(Request $request, Call $call)
+    {
+        return response()->json([
+            'id' => $call->id,
+            'status' => $call->status,
+            'call_type' => $call->call_type,
+            'caller_id' => $call->caller_id,
+            'receiver_id' => $call->receiver_id,
         ]);
+    }
 
-        $result = $this->callService->CallAccept($call, $request->sdp_answer);
+    public function getUserCalls(Request $request)
+    {
+        $user = auth()->user();
 
-        if ($result['success']) {
-            broadcast(new CallAccepted($call, $request->sdp_answer));
-            broadcast(new Answer($call->caller_id, $request->sdp_answer, Auth::id(),$call->id));
-
-            return response()->json([
-                'call_id' => $call->id,
-                'status' => 'accepted'
-            ]);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        return response()->json(['error' => 'Failed to accept call'], 500);
+        $calls = app(\App\Services\CallService::class)->getCallHistory($user->id);
+
+        return response()->json($calls);
     }
 }

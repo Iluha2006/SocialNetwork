@@ -2,28 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MessageChatService;
-use Illuminate\Http\Request;
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Messages\DeleteChatCommand;
+use App\Queries\Messages\GetUserChatsQuery;
 use Illuminate\Support\Facades\Auth;
+
 class ChatMessageController extends Controller
 {
-    protected $messageService;
-    public function __construct(MessageChatService $messageService)
-    {
-        $this->messageService = $messageService;
-    }
+    public function __construct(
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
+    ) {}
 
-
-    public function getUserChats(Request $request)
+    public function getUserChats()
     {
         $userId = Auth::id();
-        $chats = $this->messageService->getUserChats($userId);
+
+        if (!$userId) {
+            return response()->json(['error' => 'Не авторизован'], 401);
+        }
+
+        $chats = $this->queryBus->ask(new GetUserChatsQuery($userId));
+
         return response()->json($chats);
     }
+
     public function deleteChat($userId)
     {
         $currentUserId = Auth::id();
-        $this->messageService->deleteChat($currentUserId, (int)$userId);
+
+        if (!$currentUserId) {
+            return response()->json(['error' => 'Не авторизован'], 401);
+        }
+
+        $this->commandBus->dispatch(new DeleteChatCommand($currentUserId, (int) $userId));
 
         return response()->json(['success' => true]);
     }

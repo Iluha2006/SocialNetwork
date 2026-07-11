@@ -2,40 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Commands\Posts\CreatePostCommand;
 use App\Http\Requests\Post\CreatePostRequest;
-use App\Http\Resources\Post\PostCollection;
-use App\Http\Resources\Post\PostResource;
-use App\Services\Posts\PostService;
-use Illuminate\Http\Request;
+use App\Queries\Posts\GetAllPostsQuery;
+use App\Queries\Posts\GetUserPostsQuery;
 
 class PostController extends Controller
 {
     public function __construct(
-        private readonly PostService $postService
+        private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
     ) {}
 
     public function getAllPosts()
     {
-        $posts = $this->postService->getAllPosts();
-        return (new PostCollection($posts))->response();
+        $data = $this->queryBus->ask(new GetAllPostsQuery());
+
+        return response()->json(['data' => $data]);
     }
 
     public function store(CreatePostRequest $request)
     {
-        $post = $this->postService->store($request);
+        $postData = $this->commandBus->dispatch(new CreatePostCommand($request));
+
         return response()->json([
             'success' => true,
-            'message' => $request->hasFile('video')
-                ? 'Post created, media is being processed'
-                : 'Post created successfully',
-            'post' => new PostResource($post),
+            'post' => $postData,
         ], 201);
     }
 
     public function getUserPosts($userId)
     {
-        $posts = $this->postService->getUserPosts((int) $userId);
-        return (new PostCollection($posts))->response();
+        $data = $this->queryBus->ask(new GetUserPostsQuery((int) $userId));
+
+        return response()->json(['data' => $data]);
     }
 }
