@@ -1,19 +1,19 @@
 .prof-upload-container {
     position: relative;
-    top:200px;
     display: flex;
+    
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
+    width: 100%;
     padding: 20px;
     background:#0a1929;
     border-radius: 12px;
     border: 2px dashed #dee2e6;
     min-height: 200px;
     text-align: center;
-    margin: auto ;
-    max-width: 500px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .upload-placeholder {
@@ -125,7 +125,7 @@
 .upload-button {
     padding: 12px 24px;
     background: #28a745;
-    color: white;
+    color: rgb(30, 134, 213);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -165,16 +165,16 @@
     font-weight: 500;
 }
 
-/* Адаптивность */
+
 @media (max-width: 768px) {
     .prof-upload-container {
         padding: 15px;
-        min-height: 180px;
+        min-height: 380px;
     }
 
     .image-preview {
-        width: 120px;
-        height: 120px;
+        width: 360px;
+        height: 320px;
     }
 
     .file-input-label,

@@ -1,17 +1,11 @@
-.avatar-upload {
+  .avatar-upload {
     display: flex;
     flex-direction: column;
-
+    align-items: center;
     gap: 15px;
     margin: 20px 0;
-  }
-
-  .avatar-upload {
-    margin-bottom: 20px;
     text-align: center;
   }
-
-
 
   .preview-image {
     width: 100%;
@@ -21,8 +15,8 @@
 
   .avatar-preview {
     position: relative;
-    width: 180px;
-    height: 180px;
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
     cursor: pointer;
     overflow: hidden;
@@ -32,6 +26,13 @@
 
   .avatar-preview:hover {
     transform: scale(1.05);
+  }
+
+  @media (max-width: 480px) {
+    .avatar-preview {
+      width: 190px;
+      height: 190px;
+    }
   }
 
 

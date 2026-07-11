@@ -61,9 +61,9 @@ const DeleteMessageButton = ({
                 <div className="delete-message-btn" onClick={handleClick}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        fill="currentColor"
+                        width="18"
+                        height="18"
+                        fill="#ff5252"
                         className="bi bi-trash"
                         viewBox="0 0 16 16"
                     >

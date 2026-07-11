@@ -84,21 +84,39 @@
 }
 
 
-.delete {
-    color: red;
+.delete-message-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    margin-top: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: flex-end;
+}
+
+.delete-message-btn:hover {
+    background: rgba(255, 82, 82, 0.1);
+}
+
+.delete-message-btn-compact {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #ff5252;
+    transition: opacity 0.2s;
+}
+
+.delete-message-btn-compact:hover {
+    opacity: 0.7;
 }
 
 .message-time {
-    border-radius: 20px;
-
     font-size: 11px;
     opacity: 0.8;
-    align-self: flex-end;
     margin-top: 4px;
-}
-
-.their-message .message-time {
-    align-self: flex-start;
 }
 
 .message-image-container {
@@ -154,8 +172,13 @@
 }
 
 .message-bubble.selected {
-    border: 2px solid #2196f3;
-    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .message-bubble.selected {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .recipient-info span {
@@ -285,55 +308,14 @@
 
 
 
-/* Контейнер сообщения */
 .message-bubble {
-    max-width: 75%;
-    border-radius: 20px;
     position: relative;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    padding: 12px;
-    margin: 4px 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-
-.my-message {
-    align-self: flex-end;
-    background:var( --chat-header-gradient);
-    color: white;
-    border-bottom-right-radius: 6px;
-    margin-left: auto;
-}
-
-.my-message .message-content {
-    background: transparent;
-    color: inherit;
-    padding: 0;
-}
-
-/* Сообщения собеседника */
-.their-message {
-    align-self: flex-start;
-    background: white;
-    color: #333;
-    border-bottom-left-radius: 6px;
-    border: 1px solid #e0e0e0;
-}
-
-.their-message .message-content {
-    background: transparent;
-    color: inherit;
-    padding: 0;
-}
-
-/* MessageUser.css - добавьте эти стили */
-
-.audio-message-player {
-    margin: 5px 0;
+    padding: 6px 0;
+    margin: 2px 0;
 }
 
 .audio-player {
@@ -344,7 +326,6 @@
     outline: none;
 }
 
-/* Стили для аудио плеера в своих сообщениях */
 .my-message .audio-player {
     background-color: #007bff;
 }
@@ -358,7 +339,6 @@
     color: white;
 }
 
-/* Стили для аудио плеера в сообщениях собеседника */
 .their-message .audio-player {
     background-color: #f1f1f1;
 }
@@ -376,10 +356,6 @@
 .my-message .audio-duration {
     color: rgba(255, 255, 255, 0.8);
 }
-
-
-
-
 .message-bubble.audio-message {
     min-width: 280px;
 }
@@ -477,5 +453,10 @@
 
     .send-button {
         padding: 10px 15px;
+    }
+
+    .delete-message-btn-compact {
+        padding: 4px 8px;
+        font-size: 12px;
     }
 }

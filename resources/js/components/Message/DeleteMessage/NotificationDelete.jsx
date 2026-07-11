@@ -42,138 +42,89 @@ const NotificationDelete = (props) => {
 
   if (!isVisible) return null;
 
-  const typeStyles = {
-    warning: 'border-l-4 border-[#ff9800]',
-    success: 'border-l-4 border-[#4caf50]',
-    error: 'border-l-4 border-[#f44336]'
-  };
-
   return (
-    <div className={`
-      fixed
-      top-5
-      right-1
-      bg-white
-      rounded-lg
-      shadow-lg
-      shadow-black/15
-      z-1000
-      max-w-[400px]
-      min-w-[300px]
-      ${isExiting ? 'animate-slideOut' : 'animate-slideIn'}
-      sm:max-w-md
-      sm:min-w-[320px]
-    `}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={handleClose}
+      />
 
-      <div className="bg-[rgba(1,14,24,0.946)] rounded-lg">
-        <div className={`
-          rounded-r-lg
-          ${typeStyles[type]}
-        `}>
-          <div className="p-4 relative">
+      <div className={`
+        relative
+        w-full
+        max-w-sm
+        sm:max-w-md
+        bg-[rgba(1,14,24,0.946)]
+        rounded-lg
+        shadow-xl
+        shadow-black/25
+        ${isExiting ? 'animate-fadeOut scale-95' : 'animate-fadeIn scale-100'}
+        transition-all
+        duration-200
+        border-l-4
+        ${type === 'warning' ? 'border-[#ff9800]' : type === 'success' ? 'border-[#4caf50]' : 'border-[#f44336]'}
+      `}>
+        <div className="p-5 relative">
 
-            <div className="mb-4 pr-8">
-              <span className="
-                block
-                text-sm
-                text-amber-50
-                leading-relaxed
-                font-medium
-              ">
-                {message}
-              </span>
-            </div>
+          <button
+            className="
+              absolute top-3 right-3
+              bg-transparent border-none
+              text-xl cursor-pointer
+              w-7 h-7 flex items-center justify-center
+              text-gray-400 hover:text-gray-200
+              transition-colors duration-200
+              rounded-full hover:bg-white/10
+            "
+            onClick={handleClose}
+            aria-label="Закрыть уведомление"
+          >
+            ×
+          </button>
 
-
-            <div className="
-              flex
-              gap-2
-              justify-end
-              flex-wrap
+          <div className="mb-5 pr-6">
+            <span className="
+              block text-sm sm:text-base
+              text-amber-50 leading-relaxed font-medium
             ">
-              {showCancel && (
-                <button
-                  className="
-                    px-4
-                    py-2
-                    bg-gray-200
-                    hover:bg-gray-300
-                    text-gray-800
-                    rounded
-                    text-sm
-                    font-medium
-                    cursor-pointer
-                    transition-colors
-                    duration-200
-                    min-w-80
-                    border-none
-                    outline-none
-                    focus:ring-2
-                    focus:ring-gray-400
-                    focus:ring-opacity-50
-                  "
-                  onClick={handleClose}
-                  aria-label="Отмена"
-                >
-                  Отмена
-                </button>
-              )}
+              {message}
+            </span>
+          </div>
+
+          <div className="flex gap-2.5 justify-end flex-wrap">
+            {showCancel && (
               <button
                 className="
-                  px-4
-                  py-2
-  bg-[#ff5252]
-                  hover:bg-[#ff1744]
-                  text-white
-                  rounded
-                  text-sm
-                  font-medium
-                  cursor-pointer
-                  transition-colors
-                  duration-200
-                  min-w-80
-                  border-none
-                  outline-none
-                  focus:ring-2
-   focus:ring-red-400
-                  focus:ring-opacity-50
-                  z-1001
-                  relative
+                  px-4 py-2.5
+                  bg-gray-200 hover:bg-gray-300
+                  text-gray-800 rounded-lg
+                  text-sm font-medium
+                  cursor-pointer transition-colors duration-200
+                  border-none outline-none
+                  focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50
+                  flex-1 sm:flex-none
                 "
-                onClick={handleConfirm}
-                aria-label="Подтвердить"
+                onClick={handleClose}
+                aria-label="Отмена"
               >
-                Удалить
+                Отмена
               </button>
-            </div>
-
-
+            )}
             <button
               className="
-                absolute
-                top-3
-                right-3
-                bg-transparent
-                border-none
-                text-xl
-                cursor-pointer
-                p-0
-                w-6
-                h-6
-                flex
-                items-center
-                justify-center
-                text-gray-500
-                hover:text-gray-800
-                transition-colors
-                duration-200
-                rounded-full
-                hover:bg-gray-100
+                px-4 py-2.5
+                bg-[#ff5252] hover:bg-[#ff1744]
+                text-white rounded-lg
+                text-sm font-medium
+                cursor-pointer transition-colors duration-200
+                border-none outline-none
+                focus:ring-2 focus:ring-red-400 focus:ring-opacity-50
+                flex-1 sm:flex-none
               "
-              onClick={handleClose}
-              aria-label="Закрыть уведомление"
+              onClick={handleConfirm}
+              aria-label="Подтвердить"
             >
-              ×
+              Удалить
             </button>
           </div>
         </div>

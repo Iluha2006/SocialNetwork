@@ -16,14 +16,7 @@ const getFileIcon = (fileName) => {
             );
         case "doc":
         case "docx":
-            return (
-                <img
-                    width="40"
-                    height="40"
-                    src="https://logos-world.net/wp-content/uploads/2020/03/Microsoft-Word-Logo-2013-2019.png"
-                    alt="Word иконка"
-                />
-            );
+            return "📝";
         case "txt":
             return "📃";
         case "zip":

@@ -4,7 +4,7 @@ import axios from 'axios';
 import './Avatar.css';
 
 const Avatar = () => {
-    const defaultAvatar = 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13';
+    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E';
     const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
     const [uploadLoading, setUploadLoading] = useState(false);
     const fileInputRef = useRef(null);
@@ -83,6 +83,7 @@ const Avatar = () => {
                     alt="Аватар"
                     className="preview-image"
                     onError={(e) => {
+                        if (e.target.src === defaultAvatar) return;
                         console.error('Error loading avatar, setting default');
                         e.target.src = defaultAvatar;
                     }}

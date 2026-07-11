@@ -86,17 +86,17 @@ const UserImages = ({userId: users}) => {
           <p>У вас пока нет фотографий</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 w-full">
+        <div className="flex gap-4 overflow-x-auto pb-2 w-full">
           {images.map((image, index) => (
             <div
               key={image.id}
-              className="relative rounded-xl shadow-lg transition-all duration-300 cursor-pointer bg-white/5 border border-white/10 hover:shadow-xl group"
+              className="relative rounded-xl shadow-lg transition-all duration-300 cursor-pointer bg-white/5 border border-white/10 hover:shadow-xl group flex-shrink-0"
               onClick={() => openModal(image, index)}
             >
               <img
                 src={image.path_image}
                 alt={`Фото ${index + 1}`}
-                className="min-w-5/12 h-48 object-cover rounded-xl transition-transform group-hover:scale-105"
+                className="h-48 w-auto object-cover rounded-xl transition-transform group-hover:scale-105"
                 onError={(e) => {
                   e.target.src = 'https://via.placeholder.com/200x200?text=Ошибка+загрузки';
                 }}
@@ -138,27 +138,28 @@ const UserImages = ({userId: users}) => {
             />
 
             <button
-              className="absolute left-5 top-1/2 -translate-y-1/2  bg-opacity-15 text-white rounded-full w-12 h-12 text-2xl cursor-pointer flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
+              className="absolute left-1.5 top-1/2 -translate-y-1/2  bg-opacity-15 text-amber-50 bg-amber-900 rounded-full w-12 h-12 text-2xl cursor-pointer flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
               onClick={goToPrev}
             >
               ‹
             </button>
 
             <button
-              className="absolute right-5 top-1/2 -translate-y-1/2  bg-opacity-15 text-white rounded-full w-12 h-12 text-2xl cursor-pointer flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
+              className="absolute right-5 top-1/2 -translate-y-1/2  bg-opacity-15 text-white   bg-amber-900 rounded-full w-12 h-12 text-2xl cursor-pointer flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
               onClick={goToNext}
             >
               ›
             </button>
 
             <button
- className="absolute -top-12 right-0 text-white rounded-full w-11 h-11 text-xl cursor-pointer flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
+ className="absolute -top-12 right-0 text-white rounded-full w-11 h-11 text-xl cursor-pointer bg-red-600 flex items-center justify-center transition-all hover:bg-opacity-25 active:scale-95 border border-white/20"
               onClick={closeModal}
             >
               ×
             </button>
 
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-70 px-5 py-2 rounded-full text-sm font-medium">
+            <div className="absolute -mt-1.5 left-1/2 bottom-5  -translate-x-1/2 text-white bg-black bg-opacity-70 px-5 py-2 rounded-full text-sm font-medium">
+            
               {currentIndex + 1} / {images.length}
             </div>
           </div>

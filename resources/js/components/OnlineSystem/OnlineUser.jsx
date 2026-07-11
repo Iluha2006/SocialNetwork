@@ -1,29 +1,31 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOnlineUsers, setUserOnline, setUserOffline, addOnlineUser, removeOnlineUser } from '../../store/OnlineUsers';
+import { fetchOnlineUsers, setUserOnline, setUserOffline, addOnlineUser, removeOnlineUser } from '../../store/OnlineUser/OnlineUsers';
 
 const OnlineUser = () => {
   const dispatch = useDispatch();
-  const { onlineUsers, loading } = useSelector(state => state.online);
+  const { user } = useSelector(state => state.user);
 
   useEffect(() => {
-    console.log('Setting user online...');
+    if (!user?.id) return;
+
     dispatch(setUserOnline());
     dispatch(fetchOnlineUsers());
 
+    let echoChannel = null;
+
     const setupWebSocket = () => {
       try {
+        if (!window.Echo) {
+          console.warn('Echo not initialized');
+          return;
+        }
 
-
-        window.Echo.channel('online-users')
+        echoChannel = window.Echo.channel('online-users')
           .listen('.user.status.updated', (data) => {
-            console.log('WebSocket event received:', data);
-
-            if (data.user.online_status) {
-
+            if (data?.user?.online_status === 'online') {
               dispatch(addOnlineUser(data.user));
-            } else {
-              console.log('Removing offline user:', data.user.id);
+            } else if (data?.user?.id) {
               dispatch(removeOnlineUser(data.user.id));
             }
           });
@@ -35,39 +37,20 @@ const OnlineUser = () => {
     setupWebSocket();
 
     const interval = setInterval(() => {
-      console.log('Polling online users...');
       dispatch(fetchOnlineUsers());
     }, 30000);
 
     return () => {
-      console.log('Cleaning up...');
       clearInterval(interval);
       dispatch(setUserOffline());
 
-      if (window.Echo) {
+      if (echoChannel) {
         window.Echo.leaveChannel('online-users');
       }
     };
-  }, [dispatch]);
+  }, [dispatch, user?.id]);
 
-
-
-  if (loading) {
-    return <div>Loading online users...</div>;
-  }
-
-  return (
-    <div>
-      <h3>Online Users ({onlineUsers.length})</h3>
-      <ul>
-        {onlineUsers.map(user => (
-          <li key={user.id}>
-            {user.name} - {user.online_status ? 'Online' : `Last seen: ${new Date(user.last_seen).toLocaleString()}`}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  return null;
 };
 
 export default OnlineUser;

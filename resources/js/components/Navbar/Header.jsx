@@ -38,8 +38,8 @@ const Header = () => {
     navigate('/login');
   };
 
-  const Setting = () => {
-    navigate('/setting');
+  const handleNavigate = (path) => {
+    navigate(path);
     setIsModalOpen(false);
   };
 
@@ -90,7 +90,7 @@ const Header = () => {
           onClose={() => setIsModalOpen(false)}
 
           onLogout={handleLogout}
-          onNavigate={Setting}
+          onNavigate={handleNavigate}
           isLogout={isLoggingOut}
         />
 

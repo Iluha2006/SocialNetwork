@@ -1,25 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ activeTab, setActiveTab, isMobile, isOpen, onToggle }) => {
+const Sidebar = ({ isMobile, isOpen, onToggle }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(isOpen);
 
+  const menuItems = [
+    { id: 'profile', name: 'Профиль', route: '/profile' },
+    { id: 'feed', name: 'Лента', route: '/feed' },
+    { id: 'messenger', name: 'Мессенджер', route: '/messenger' },
+    { id: 'friends', name: 'Друзья', route: '/friends' },
+    { id: 'photos', name: 'Фото', route: '/photo' },
+    { id:'friend-requests', name:'Заявки в друзья', route: '/friend-requests' },
+  ];
+
+  const activeTab = menuItems.find(m => m.route === location.pathname)?.id || 'feed';
 
   useEffect(() => {
     setSidebarOpen(isOpen);
   }, [isOpen]);
 
-  const menuItems = [
-    { id: 'profile', name: 'Профиль' },
-    { id: 'feed', name: 'Лента' },
-    { id: 'messenger', name: 'Мессенджер'},
-    { id: 'friends', name: 'Друзья' },
-    { id: 'photos', name: 'Фото' },
-    { id:'friend-requests', name:'Заявки в друзья'},
-  ];
-
-
   const handleMenuItemClick = (itemId) => {
-    setActiveTab(itemId);
+    const item = menuItems.find(m => m.id === itemId);
+    if (item) {
+      navigate(item.route);
+    }
     if (isMobile && onToggle) {
       onToggle();
     }
@@ -29,7 +35,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, isOpen, onToggle }) => {
     <>
  {isMobile && (
         <button
-  className=" h-12 fixed top-4  sm:fixed  left-1 z-[1001] bg-[rgba(8,63,105,0.946)] text-white border-none p-2 rounded-xl cursor-pointer md:hidden"
+  className=" h-12 fixed top-4  sm:fixed  left-1 z-1001 bg-[rgba(8,63,105,0.946)] text-white border-none p-2 rounded-xl cursor-pointer md:hidden"
   onClick={onToggle}
   aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
 >
@@ -50,15 +56,13 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, isOpen, onToggle }) => {
         className={`
           fixed top-0  md:relative rounded-2xl bg-[rgba(1,14,24,0.946)] text-white py-4 border-r border-white/10
           ${isMobile
-            ? `w-64 h-screen z-[1000] transition-transform duration-300 ease-in-out ${
+            ? `w-64 h-screen z-1000 transition-transform duration-300 ease-in-out ${
                 isOpen ? 'translate-x-0' : '-translate-x-full'
               }`
             : 'ml-4 mt-12 w-55 h-[600px]'
           }
         `}
       >
-
-
         <div className="mt-16 md:mt-0">
           {menuItems.map((item) => (
             <button
@@ -79,11 +83,9 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, isOpen, onToggle }) => {
           ))}
         </div>
       </div>
-
-
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-[999] bg-black/50 md:hidden"
+          className="fixed inset-0 z-999 bg-black/50 md:hidden"
           onClick={onToggle}
         />
       )}

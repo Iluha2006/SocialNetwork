@@ -50,56 +50,67 @@ const ImagesUpload = () => {
         }
     };
 
+    
+
+
+
     const handleSubmit = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        if (!selectedFile) {
-            setError('Пожалуйста, выберите файл');
-            return;
+    if (!selectedFile) {
+        setError('Пожалуйста, выберите файл');
+        return;
+    }
+
+    if (!userId) {
+        setError('Ошибка: ID пользователя не найден');
+        return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+        const formData = new FormData();
+        formData.append('profile_images', selectedFile);
+
+ console.log('[ImageUpload] Sending file:', {
+            name: selectedFile.name,
+            type: selectedFile.type,
+            size: selectedFile.size,
+            instanceofFile: selectedFile instanceof File,
+        });
+      
+        const response = await axios.post('/images/upload', formData, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            withCredentials: true
+        });
+
+        if (response.data.success || response.status === 201) {
+            setSelectedFile(null);
+            setPreviewUrl('');
+            alert('Фото успешно загружено!');
+            window.location.reload();
         }
 
-        if (!userId) {
-            setError('Ошибка: ID пользователя не найден');
-            return;
+    } catch (err) {
+         console.error('Upload error:', err);
+
+         if (err.response?.data?.errors?.profile_images) {
+            setError(err.response.data.errors.profile_images.join(', '));
+        } else if (err.response?.data?.message) {
+            setError(err.response.data.message);
+        } else {
+            setError('Ошибка загрузки изображения');
         }
-
-        setLoading(true);
-        setError('');
-
-        try {
-            const formData = new FormData();
-            formData.append('profile_images', selectedFile);
-
-
-            const response = await axios.post('/images/upload', formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
-                withCredentials: true
-            });
-
-            if (response.data.success) {
-                setSelectedFile(null);
-                setPreviewUrl('');
-                alert('Фото успешно загружено!');
-                window.location.reload();
-            }
-
-        } catch (err) {
-            console.error('Upload error:', err);
-
-            if (err.response?.data?.errors) {
-                setError(Object.values(err.response.data.errors).flat().join(', '));
-            } else if (err.response?.data?.message) {
-                setError(err.response.data.message);
-            } else {
-                setError('Ошибка загрузки изображения');
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+         setError('Ошибка загрузки изображения');
+    
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="prof-upload-container">
