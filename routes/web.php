@@ -27,6 +27,7 @@ use App\Http\Controllers\Settings\PrivacySettingsController;
 use App\Http\Controllers\Auth\SocialAuthNetwork;
 use App\Http\Controllers\Image\ImageController;
 use App\Http\Controllers\Images\ImagesBacroundController;
+use App\Http\Controllers\PostLikeController;
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -41,12 +42,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/email/verification-status', [VerificationController::class, 'checkVerification'])
         ->name('verification.status');
 });
-
+Route::prefix('posts/{postId}')->middleware(['auth.token' ])->group(function () {
+    
+    Route::post('/like', [PostLikeController::class, 'toggleLike']);
+    Route::delete('/like', [PostLikeController::class, 'deleteLike']);
+    
+    Route::get('/likes/count', [PostLikeController::class, 'getCount']);
+    Route::get('/likes/history', [PostLikeController::class, 'history']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', [UserController::class, 'getCurrentUser']);
-
 
     Route::get('/user/check', [UserController::class, 'checkAuth']);
 });
@@ -86,9 +93,8 @@ Route::prefix('api')->middleware('auth.token' )->group(function () {
 
 
 
-
-
 Route::middleware(['auth.token' ])->group(function () {
+    
     Route::prefix('online-status')->group(function () {
         Route::get('/users', [OnlineStatusController::class, 'getOnlineUsers']);
         Route::post('/online', [OnlineStatusController::class, 'setUserOnline']);
@@ -112,6 +118,7 @@ Route::middleware(['auth.token' ])->group(function () {
 Route::middleware(['auth.token' ])->group(function () {
 
     Route::post('/messages/send/{id}', [MessagesController::class, 'sendMessage']);
+    Route::get('/messages/conversation/{userId}', [MessagesController::class, 'getChatMessages']);
     Route::get('/messages/chats', [MessagesController::class, 'getChatMessages']);
     Route::get('/files/{userId}', [MessagesController::class, 'getFiles']);
     Route::put('/messages/chat/{messageId}', [MessagesController::class, 'updateMessage']);
@@ -153,20 +160,22 @@ Route::middleware('auth.token')->group(function () {
     });
 });
 
+
 Route::middleware('auth.token')->group(function () {
     Route::delete('/comments/{commentId}', [CommentController::class, 'destroy']);
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
-    Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
 });
+Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
 
 
-Route::middleware('auth.token')->group(function () {
+
+
     Route::post('/friend/send', [FriendRequestController::class, 'send']);
     Route::post('/friend/accept/{requestId}', [FriendRequestController::class, 'accept']);
     Route::post('/friend/reject/{requestId}', [FriendRequestController::class, 'reject']);
+    Route::post('/friend/cancel/{requestId}', [FriendRequestController::class, 'cancel']);
     Route::get('/friend/{profileId}', [FriendRequestController::class, 'getRequests']);
 
- });
 
 
 

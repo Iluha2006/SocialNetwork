@@ -49,7 +49,7 @@ export const fetchOnlineUsers = () => async (dispatch, getState) => {
 
         const response = await axios.get('/online-status/users', {
             headers: {
-           //     'Authorization': `Bearer ${token}`,
+         
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
