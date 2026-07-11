@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Buses\CommandBus;
+use App\Buses\Contracts\CommandBusInterface;
+use App\Buses\Contracts\QueryBusInterface;
+use App\Buses\QueryBus;
 use App\Contracts\Cache\CacheServiceInterface;
 use App\Contracts\Profile\PrivateProfileServiceInterface;
 use App\Contracts\Profile\ProfileServiceInterface;
@@ -17,6 +21,9 @@ class ModuleServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->app->singleton(CommandBusInterface::class, CommandBus::class);
+        $this->app->singleton(QueryBusInterface::class, QueryBus::class);
+
         $this->app->singleton(CacheServiceInterface::class, CacheService::class);
 
         $this->app->singleton(ProfileServiceInterface::class, ProfileService::class);
