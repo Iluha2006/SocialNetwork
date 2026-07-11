@@ -9,25 +9,31 @@ use Illuminate\Database\Eloquent\Collection;
 class FriendRequestService
 {
     public function sendFriendRequest(int $senderId, int $receiverId): array
-{
+    {
+        
+        if ($senderId === $receiverId) {
+            return [
+                'success' => false,
+            ];
+        }
 
-    if ($this->friendshipExists($senderId, $receiverId)) {
-        throw new \RuntimeException('Пользователь уже в друзьях', 400);
+        if ($this->friendshipExists($senderId, $receiverId)) {
+            return [
+                'success' => false,
+             
+            ];
+        }
+
+        $existingRequest = $this->findExistingRequest($senderId, $receiverId);
+
+        if ($existingRequest) {
+            return $this->handleExistingRequest($existingRequest, $senderId, $receiverId);
+        }
+
+        return $this->createNewRequest($senderId, $receiverId);
     }
 
-
-    $existingRequest = $this->findExistingRequest($senderId, $receiverId);
-
-    if ($existingRequest) {
-        return $this->handleExistingRequest($existingRequest, $senderId);
-    }
-
-
-    return $this->createNewRequest($senderId, $receiverId);
-}
-
-
-     public function friendshipExists(int $userId1, int $userId2): bool
+    public function friendshipExists(int $userId1, int $userId2): bool
     {
         return Friendship::where(function($query) use ($userId1, $userId2) {
             $query->where('user_id', $userId1)
@@ -40,8 +46,7 @@ class FriendRequestService
 
     private function findExistingRequest(int $senderId, int $receiverId): ?FriendRequest
     {
-        return FriendRequest::where(function($query) use ($senderId, $receiverId)
-        {
+        return FriendRequest::where(function($query) use ($senderId, $receiverId) {
             $query->where('sender_id', $senderId)
                   ->where('receiver_id', $receiverId);
         })->orWhere(function($query) use ($senderId, $receiverId) {
@@ -50,41 +55,62 @@ class FriendRequestService
         })->first();
     }
 
-    private function handleExistingRequest(FriendRequest $existingRequest, int $senderId): array
-{
-    switch ($existingRequest->status) {
-        case 'pending':
-            if ($existingRequest->sender_id == $senderId) {
-                throw new \RuntimeException('Вы уже отправили заявку этому пользователю', 400);
-            } else {
+    private function handleExistingRequest(FriendRequest $existingRequest, int $senderId, int $receiverId): array
+    {
+        switch ($existingRequest->status) {
+            case 'pending':
+             
+                if ($existingRequest->sender_id === $senderId) {
+                    return [
+                        'success' => false,
+                    
+                        
+                    ];
+                } 
+            
+                else {
+                    return $this->acceptRequest($existingRequest);
+                }
 
-                throw new \RuntimeException('Этот пользователь уже отправил вам заявку', 400);
-            }
-
-        case 'accepted':
-            throw new \RuntimeException('Пользователь уже в друзьях', 400);
-
-        case 'rejected':
-            if ($existingRequest->sender_id == $senderId) {
-                $this->renewRejectedRequest($existingRequest);
+            case 'accepted':
                 return [
-                    'request' => $existingRequest->load('sender', 'receiver'),
-                    'message' => 'Заявка обновлена'
+                    'success' => false,
+                    'message' => 'Пользователь уже в друзьях',
+                    'code' => 'ALREADY_FRIENDS'
                 ];
-            } else {
-                throw new \RuntimeException('Нельзя отправить заявку после отклонения', 400);
-            }
+
+            case 'rejected':
+                if ($existingRequest->sender_id === $senderId) {
+                    return $this->renewRejectedRequest($existingRequest);
+                } 
+                else {
+                    return [
+                        'success' => false,
+                        'message' => 'Вы отклонили заявку от этого пользователя',
+                        'code' => 'YOU_REJECTED_REQUEST'
+                    ];
+                }
+
+            default:
+                return [
+                    'success' => false,
+                ];
+        }
     }
 
-    throw new \RuntimeException('Неизвестный статус заявки', 400);
-}
-    private function renewRejectedRequest(FriendRequest $request): void
+    private function renewRejectedRequest(FriendRequest $request): array
     {
         $request->update([
             'status' => 'pending',
-            'created_at' => now(),
             'updated_at' => now()
         ]);
+
+        return [
+            'success' => true,
+            'request' => $request->load('sender:id,name,email', 'receiver:id,name,email'),
+            'message' => 'Заявка отправлена повторно',
+            'code' => 'REQUEST_RENEWED'
+        ];
     }
 
     private function createNewRequest(int $senderId, int $receiverId): array
@@ -96,39 +122,73 @@ class FriendRequestService
         ]);
 
         return [
-            'request' => $friendRequest->load('sender', 'receiver'),
-            'message' => 'Заявка отправлена'
+            'success' => true,
+            'request' => $friendRequest->load('sender:id,name,email', 'receiver:id,name,email'),
+            'message' => 'Заявка отправлена',
+            'code' => 'REQUEST_SENT'
         ];
     }
 
-    public function acceptRequest(int $requestId): void
+    public function acceptRequest(FriendRequest $request): array
     {
-        $friendRequest = FriendRequest::findOrFail($requestId);
+      
+        if ($request->status !== 'pending') {
+            return [
+                'success' => false,
+               
+            ];
+        }
 
-            Friendship::firstOrCreate([
-                'user_id' => $friendRequest->sender_id,
-                'friend_id' => $friendRequest->receiver_id
-            ]);
+     
+        Friendship::firstOrCreate([
+            'user_id' => $request->sender_id,
+            'friend_id' => $request->receiver_id
+        ]);
 
-            Friendship::firstOrCreate([
-                'user_id' => $friendRequest->receiver_id,
-                'friend_id' => $friendRequest->sender_id
-            ]);
+        Friendship::firstOrCreate([
+            'user_id' => $request->receiver_id,
+            'friend_id' => $request->sender_id
+        ]);
 
-            $friendRequest->update(['status' => 'accepted']);
+        
+        $request->update(['status' => 'accepted']);
 
+        return [
+            'success' => true,
+            'request' => $request->load('sender:id,name,email', 'receiver:id,name,email'),
+            'message' => 'Заявка принята',
+            'code' => 'REQUEST_ACCEPTED'
+        ];
     }
 
-    public function rejectRequest(int $requestId): void
+    public function rejectRequestById(int $requestId, int $userId): array
     {
-        $friendRequest = FriendRequest::findOrFail($requestId);
+        $friendRequest = FriendRequest::where('id', $requestId)
+            ->where('receiver_id', $userId)
+            ->where('status', 'pending')
+            ->first();
+
+        if (!$friendRequest) {
+            return [
+                'success' => false,
+            
+            ];
+        }
 
         $friendRequest->update(['status' => 'rejected']);
+
+        return [
+            'success' => true,
+            'request' => $friendRequest->load('sender:id,name,email', 'receiver:id,name,email'),
+         
+           
+        ];
     }
 
     public function getRequests(int $profileId): array
     {
         return [
+            'success' => true,
             'incoming' => $this->getIncomingRequests($profileId),
             'outgoing' => $this->getOutgoingRequests($profileId)
         ];
@@ -136,7 +196,8 @@ class FriendRequestService
 
     private function getIncomingRequests(int $profileId): Collection
     {
-        return FriendRequest::with('sender')
+        return FriendRequest::select(['id', 'sender_id', 'receiver_id', 'status', 'created_at'])
+            ->with('sender:id,name')
             ->where('receiver_id', $profileId)
             ->where('status', 'pending')
             ->get();
@@ -144,19 +205,34 @@ class FriendRequestService
 
     private function getOutgoingRequests(int $profileId): Collection
     {
-        return FriendRequest::with('receiver')
+        return FriendRequest::select(['id', 'sender_id', 'receiver_id', 'status', 'created_at'])
+            ->with('receiver:id,name')
             ->where('sender_id', $profileId)
             ->where('status', 'pending')
             ->get();
     }
 
-    public function cancelRequest(int $requestId, int $userId): void
+    public function cancelRequest(int $requestId, int $userId): array
     {
         $request = FriendRequest::where('id', $requestId)
             ->where('sender_id', $userId)
             ->where('status', 'pending')
-            ->firstOrFail();
+            ->first();
+
+        if (!$request) {
+            return [
+                'success' => false,
+                'message' => 'Заявка не найдена',
+                'code' => 'REQUEST_NOT_FOUND'
+            ];
+        }
 
         $request->delete();
+
+        return [
+            'success' => true,
+            'message' => 'Заявка отменена',
+           
+        ];
     }
 }

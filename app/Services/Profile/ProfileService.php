@@ -14,8 +14,6 @@ use App\Models\Profile;
 class ProfileService implements ProfileServiceInterface
 {
 
-
-
     public function show(int $userId): array
     {
 
@@ -43,9 +41,10 @@ class ProfileService implements ProfileServiceInterface
 
     public function index(): iterable
     {
-        $profile= Profile::with('user:id,name,email')
+        $profile= Profile::select(['id', 'user_id', 'name', 'email', 'avatar'])
             ->orderBy('id')
-            ->get(['id', 'user_id', 'name', 'email', 'avatar']);
+            ->limit(100)
+            ->get();
 
 
             return $profile;
@@ -73,6 +72,7 @@ class ProfileService implements ProfileServiceInterface
             throw new \RuntimeException('Пользователь уже заблокирован', 400);
         }
 
+     
         $currentUser->blocks()->create(['blocked_id' => $userId]);
 
         return [
@@ -112,7 +112,7 @@ class ProfileService implements ProfileServiceInterface
         $profile = Profile::findOrFail($id);
 
         $profile->update($data);
-        return $profile->load('user');
+        return $profile;
     }
 
     public function destroy(int $id): void
@@ -137,11 +137,11 @@ class ProfileService implements ProfileServiceInterface
         }
 
         $file = $request->file('avatar');
-        $fileName = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $fileName = 'avatar_' . $user->id . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $path = "avatars/{$fileName}";
         Storage::disk('s3')->put($path, file_get_contents($file), 'public');
 
-        $avatarUrl = env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $path;
+        $avatarUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
 
         $profile = Profile::where('user_id', $user->id)->first();
         if ($profile) {
@@ -168,7 +168,11 @@ class ProfileService implements ProfileServiceInterface
         $currentUser =Auth::guard('api')->user() ?? Auth::guard('web')->user();
 
         if (!$currentUser) {
-            throw new \RuntimeException('Пользователь не аутентифицирован', 401);
+            return [
+                'success' => false,
+                'blocked_users' => [],
+                'count' => 0,
+            ];
         }
 
         $blockedUsers = $currentUser->blocks()
@@ -194,14 +198,16 @@ class ProfileService implements ProfileServiceInterface
 
     public function getFriends(int $profileId): iterable
     {
-        $profile = Profile::with('friends')->findOrFail($profileId);
+        $profile = Profile::with('friends:friend_id,user_id')->findOrFail($profileId);
         return $profile->friends;
     }
 
     public function getImages(int $userId): iterable
     {
         return \App\Models\ImageProfile::where('user_id', $userId)
+            ->select(['id', 'user_id', 'path_image', 'created_at'])
             ->orderBy('created_at', 'desc')
+            ->limit(50)
             ->get();
     }
 }

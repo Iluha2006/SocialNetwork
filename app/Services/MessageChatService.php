@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FileMessage;
 use App\Models\Message;
 use App\Models\User;
 use App\Events\MessageDeleted;
@@ -40,15 +41,31 @@ class MessageChatService
             return collect([]);
         }
 
-        return User::whereIn('id', $chatUserIds)
-            ->with('profile')
-            ->get(['id', 'name', 'online_status']);
+        $users = User::whereIn('id', $chatUserIds)
+            ->select(['id', 'name', 'online_status'])
+            ->with('profile:user_id,name,avatar')
+            ->get();
+
+        foreach ($users as $user) {
+            $lastMessage = \App\Models\Message::where(function ($q) use ($userId, $user) {
+                $q->where('sender_id', $userId)->where('receiver_id', $user->id);
+                $q->orWhere(function ($q2) use ($userId, $user) {
+                    $q2->where('sender_id', $user->id)->where('receiver_id', $userId);
+                });
+            })
+            ->latest('created_at')
+            ->first(['content', 'created_at', 'images', 'file']);
+
+            $user->last_message = $lastMessage?->toArray();
+        }
+
+        return $users;
     }
     public function updateMessage(int $messageId, string $content)
     {
         $message = Message::findOrFail($messageId);
         $message->update(['content' => $content]);
-        $message->load(['sender', 'receiver']);
+        $message->load(['sender:id,name,email', 'receiver:id,name,email']);
 
         return $message;
     }
@@ -68,8 +85,9 @@ class MessageChatService
             $query->whereNotNull('file')
                   ->orWhereNotNull('images');
         })
-        ->with(['sender', 'receiver'])
+        ->with(['sender:id,name', 'receiver:id,name'])
         ->orderBy('created_at', 'desc')
+        ->limit(100)
         ->get();
     }
 
@@ -96,10 +114,22 @@ class MessageChatService
             'content' => $data['content']
         ]);
 
-        $message->load(['sender', 'receiver']);
+        if ($file && $fileUrl) {
+            FileMessage::create([
+                'user_id' => $userId,
+                'message_id' => $message->id,
+                'original_name' => $file->getClientOriginalName(),
+                'path_file' => $fileUrl,
+                'file_type' => $file->getClientOriginalExtension(),
+                'file_size' => $file->getSize(),
+            ]);
+        }
+
+        $message->load(['sender:id,name,email', 'receiver:id,name,email', 'files']);
 
         $this->cacheService->cacheMessage($message);
         $this->cacheService->updateChatCache($userId, $receiverId, $message);
+        $this->cacheService->clearChatMessagesCache($userId, $receiverId);
         return $message;
     }
 
@@ -115,17 +145,19 @@ class MessageChatService
             })->orWhere(function($query) use ($currentUserId, $otherUserId) {
                 $query->where('sender_id', $otherUserId)
                       ->where('receiver_id', $currentUserId);
-            })->with('sender')
-              ->orderBy('created_at', 'asc')
-              ->get();
+        })->select(['id', 'sender_id', 'receiver_id', 'content', 'images', 'file', 'created_at', 'updated_at'])
+          ->with('sender:id,name,email')
+          ->with('files')
+          ->orderBy('created_at', 'asc')
+          ->limit(200)
+          ->get();
         });
     }
 
 
     public function deleteMessage(int $messageId)
     {
-        $message = Message::find($messageId);
-        $messageId = $message->id;
+        $message = Message::findOrFail($messageId);
         $message->delete();
 
         broadcast(new MessageDeleted($messageId));
@@ -165,18 +197,19 @@ class MessageChatService
 
     private function uploadFile($file, string $path): string
     {
-        $filename = time() . '_' . $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $safeName = time() . '_' . md5($file->getClientOriginalName()) . '.' . $extension;
         $storagePath = Storage::disk('s3')->putFileAs(
             $path,
             $file,
-            $filename,
+            $safeName,
             'public'
         );
 
+        $baseUrl = config('filesystems.disks.s3.url') ?: env('AWS_ENDPOINT');
+        $bucket = env('AWS_BUCKET');
 
-        $storageFile= env('AWS_ENDPOINT') . '/' . env('AWS_BUCKET') . '/' . $storagePath ;
-
-        return $storageFile ;
+        return $baseUrl . '/' . $bucket . '/' . $storagePath;
     }
 
 

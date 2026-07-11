@@ -15,8 +15,10 @@ class AudioMessageService
     {
         return AudioMessage::where('receiver_id', $userId)
             ->orWhere('sender_id', $userId)
-            ->with(['sender', 'receiver'])
+            ->select(['id', 'sender_id', 'receiver_id', 'audio_message', 'created_at'])
+            ->with(['sender:id,name,email', 'receiver:id,name,email'])
             ->orderBy('created_at', 'desc')
+            ->limit(100)
             ->get();
     }
 
@@ -49,7 +51,7 @@ class AudioMessageService
                 'audio_message' => $audioUrl,
             ]);
 
-            $message->load(['sender', 'receiver']);
+            $message->load(['sender:id,name,email', 'receiver:id,name,email']);
 
 
             event(new AudioMessageSent($message));
@@ -83,8 +85,10 @@ class AudioMessageService
         })->orWhere(function($query) use ($userId, $otherUserId) {
             $query->where('sender_id', $otherUserId)
                   ->where('receiver_id', $userId);
-        })->with(['sender', 'receiver'])
+        })->select(['id', 'sender_id', 'receiver_id', 'audio_message', 'created_at'])
+          ->with(['sender:id,name,email', 'receiver:id,name,email'])
           ->orderBy('created_at', 'asc')
+          ->limit(200)
           ->get();
     }
 
@@ -116,7 +120,8 @@ class AudioMessageService
         })->orWhere(function($query) use ($userId, $otherUserId) {
             $query->where('sender_id', $otherUserId)
                   ->where('receiver_id', $userId);
-        })->get();
+        })->select(['id', 'sender_id', 'receiver_id', 'audio_message', 'created_at'])
+          ->get();
 
         foreach ($audioMessages as $audioMessage) {
             if ($audioMessage->audio_message) {

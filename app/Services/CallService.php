@@ -11,34 +11,43 @@ class CallService
 {
     public function initiateCall(Request $request)
     {
-        $caller = Auth::user();
+        $caller = $this->resolveCurrentUser();
+        if (!$caller) {
+            throw new \RuntimeException('User not authenticated');
+        }
+
         $receiver = User::findOrFail($request->receiver_id);
 
-         $this->CallStatus($receiver->id, $caller->id);
+        $statusResult = $this->CallStatus($receiver->id, $caller->id);
+        if (isset($statusResult['can_call']) && !$statusResult['can_call']) {
+            return $statusResult;
+        }
 
-
-            $call = Call::create([
-                'caller_id' => $caller->id,
-                'receiver_id' => $receiver->id,
-                'status' => 'initiated',
-                'call_type' => $request->call_type,
-                'sdp_offer' => json_encode($request->sdp_offer)
-            ]);
-
-            return [
-                'success' => true,
-                'call' => $call,
-                'message' => 'Call initiated successfully'
-            ];
+        $call = Call::create([
+            'caller_id' => $caller->id,
+            'receiver_id' => $receiver->id,
+            'status' => 'initiated',
+            'call_type' => $request->call_type,
+            'sdp_offer' => json_encode($request->sdp_offer)
+        ]);
+        return [
+            'success' => true,
+            'call' => $call,
+            'message' => 'Call initiated successfully'
+        ];
 
     }
-
-    public function CallStatus($receiverId, $callerId)
+      public function resolveCurrentUser(): ?User
+    {
+        return Auth::guard('api')->user() ?? Auth::guard('web')->user() ?? Auth::user();
+    }
+    public function CallStatus(int $receiverId,int  $callerId)
     {
         $callStatus = ['can_call' => true];
 
 
-        $activeCall = Call::where(function($query) use ($receiverId, $callerId) {
+        $activeCall = Call::select(['id', 'status'])
+            ->where(function($query) use ($receiverId, $callerId) {
             $query->where('receiver_id', $receiverId)
                   ->orWhere('caller_id', $receiverId);
         })->whereIn('status', ['initiated', 'ringing', 'ongoing'])->first();
@@ -73,15 +82,9 @@ class CallService
             case 'initiated':
             case 'ringing':
 
-                if ($lastCall->created_at->diffInMinutes(now()) > 2) {
-                    $lastCall->update(['status' => 'missed']);
-                    return $callStatus;
-                }
-                return [
-                    'can_call' => false,
-                    'error' => 'Call already in progress',
-                    'existing_call_id' => $lastCall->id
-                ];
+                $lastCall->update(['status' => 'ringing']) ;
+                $lastCall->update(['status'=> 'initiated']) ;
+                return $callStatus;
 
             case 'ongoing':
                 return [
@@ -109,4 +112,16 @@ class CallService
             'message' => 'Call accepted successfully'
         ];
     }
+  
+public function getCallHistory(int $userId)
+{
+     $calls = Call::select('id', 'caller_id', 'receiver_id', 'call_type', 'status', 'duration', 'started_at', 'ended_at')
+    ->where('caller_id', $userId)
+    ->orWhere('receiver_id', $userId)
+    ->orderBy('created_at', 'desc')
+    ->limit(50)
+    ->get();
+    
+    return $calls;
+}
 }
