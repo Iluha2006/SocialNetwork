@@ -106,17 +106,17 @@ const UserImages = ({ userId, compact = false }) => {
                 </div>
             ) : currentUserImages.length > 0 ? (
                 <>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth snap-x snap-mandatory" style={{ scrollbarWidth: 'thin' }}>
                         {currentUserImages.map((image, index) => (
                             <div
                                 key={image.id}
-                                className="relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg group"
+                                className="relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg group flex-shrink-0 snap-start w-full sm:w-44 md:w-52 lg:w-56 h-56 sm:h-48 md:h-56 lg:h-64"
                                 onClick={() => openModal(image, index)}
                             >
                                 <img
                                     src={image.path_image}
                                     alt={`Фото ${index + 1}`}
-                                    className="w-full h-48 object-cover block"
+                                    className="w-full h-full object-cover block"
                                     loading="lazy"
                                 />
 
@@ -161,7 +161,7 @@ const UserImages = ({ userId, compact = false }) => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
-                            className="absolute -top-12 right-0 bg-transparent border-none text-white text-3xl cursor-pointer w-10 h-10 flex items-center justify-center hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+                            className="absolute -top-12 right-0 bg-transparent border-none text-white text-3xl cursor-pointer w-10 h-10 flex items-center justify-center bg-red-500 hover:bg-opacity-20 rounded-full transition-colors"
                             onClick={closeModal}
                             aria-label="Закрыть"
                         >

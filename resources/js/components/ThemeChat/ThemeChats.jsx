@@ -13,13 +13,12 @@ import {
 } from '../../store/Files/BacroundImages';
 import { useParams } from 'react-router-dom';
 
-const ThemeChats = () => {
+const ThemeChats = ({ onBack }) => {
     const dispatch = useDispatch();
     const { userId } = useParams();
     const { user } = useSelector(state => state.user);
     const backgroundImage = useSelector(state => selectBackgroundByUserId(state, user?.id));
     const { backgrounds } = useSelector(state => state.background);
-
 
     const chatId = [user?.id, parseInt(userId)].sort().join('-');
     const selectedBackground = useSelector(state =>
@@ -27,7 +26,6 @@ const ThemeChats = () => {
     );
 
     const [currentTheme, setCurrentTheme] = useState(getDefaultTheme());
-    const [showThemeSelector, setShowThemeSelector] = useState(false);
 
 
     const userBackgrounds = backgrounds && user?.id ? backgrounds[user.id] : null;
@@ -87,7 +85,6 @@ const ThemeChats = () => {
                 localStorage.setItem(`chatTheme_${chatId}`, themeName);
             }
         }
-        setShowThemeSelector(false);
     };
     const handleBackgroundSet = (imageUrl) => {
 
@@ -111,152 +108,98 @@ const ThemeChats = () => {
 
 
     return (
-        <div className="theme-chats-container">
-            <button
-                className="theme-toggle-btn"
-                onClick={() => setShowThemeSelector(!showThemeSelector)}
-                title="Сменить тему чата"
-            >
-                🎨
-            </button>
+        <div className="p-3">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                <button
+                    onClick={onBack}
+                    className="bg-transparent border-none text-blue-400 text-sm cursor-pointer px-2 py-1 rounded hover:bg-white/10 transition-colors"
+                >
+                    ← Назад
+                </button>
+                <h3 className="text-gray-200 text-sm font-semibold m-0">Темы чата</h3>
+            </div>
 
-            {showThemeSelector && (
-                <div className="theme-selector-overlay" onClick={() => setShowThemeSelector(false)}>
-                    <div className="theme-selector" onClick={(e) => e.stopPropagation()}>
-                        <div className="theme-selector-header">
-                            <h3>Выберите тему чата</h3>
-                            <button
-                                className="close-theme-selector"
-                                onClick={() => setShowThemeSelector(false)}
-                            >
-                                ×
-                            </button>
+            <div className="themes-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+                <div
+                    className={`theme-option ${currentTheme === 'custom-background' ? 'active' : ''}`}
+                    onClick={() => handleThemeChange('custom-background')}
+                >
+                    <div
+                        className="theme-preview"
+                        style={{
+                            background: selectedBackground ? `url(${selectedBackground}) center/cover` : '#333',
+                            borderColor: '#007bff',
+                            height: '60px'
+                        }}
+                    >
+                        <div className="preview-message their" style={{ background: 'rgba(255,255,255,0.9)', color: '#333' }}>
+                            Привет!
                         </div>
+                        <div className="preview-message my" style={{ background: 'rgba(0,123,255,0.9)', color: 'white' }}>
+                            Как дела?
+                        </div>
+                    </div>
+                    <span className="theme-name" style={{ color: '#ccc' }}>
+                        {selectedBackground ? 'Мой фон' : 'Свой фон'}
+                    </span>
+                </div>
 
-                        <div className="themes-grid">
-                            <div
-                                className={`theme-option ${currentTheme === 'custom-background' ? 'active' : ''}`}
-                                onClick={() => handleThemeChange('custom-background')}
-                            >
-                                <div
-                                    className="theme-preview"
-                                    style={{
-                                        background: selectedBackground ? `url(${selectedBackground}) center/cover` : '#f0f0f0',
-                                        borderColor: '#007bff'
-                                    }}
-                                >
-                                    <div
-                                        className="preview-message their"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.9)',
-                                            color: '#333'
-                                        }}
-                                    >
-                                        Привет!
-                                    </div>
-                                    <div
-                                        className="preview-message my"
-                                        style={{
-                                            background: 'rgba(0,123,255,0.9)',
-                                            color: 'white'
-                                        }}
-                                    >
-                                        Как дела?
-                                    </div>
-                                </div>
-                                <span className="theme-name">
-                                    {selectedBackground ? 'Мой фон' : 'Установить фон'}
-                                </span>
+                {Object.entries(chatThemes).map(([key, theme]) => (
+                    <div
+                        key={key}
+                        className={`theme-option ${currentTheme === key ? 'active' : ''}`}
+                        onClick={() => handleThemeChange(key)}
+                    >
+                        <div
+                            className="theme-preview"
+                            style=
+                            {
+                             {
+                                background: theme.gradients.background,
+                                borderColor: theme.colors.primary,
+                                height: '60px'
+                            }
+                        }
+                        >
+                            <div className="preview-message their" style={{ background: theme.gradients.theirMessage, color: theme.colors.text }}>
+                                Привет!
                             </div>
+                          
+                        </div>
+                        <span className="theme-name" style={{ color: '#ccc' }}>{theme.name}</span>
+                    </div>
+                ))}
+            </div>
 
-                            {Object.entries(chatThemes).map(([key, theme]) => (
-                                <div
-                                    key={key}
-                                    className={`theme-option ${currentTheme === key ? 'active' : ''}`}
-                                    onClick={() => handleThemeChange(key)}
-                                >
-                                    <div
-                                        className="theme-preview"
-                                        style={{
-                                            background: theme.gradients.background,
-                                            borderColor: theme.colors.primary
-                                        }}
-                                    >
-                                        <div
-                                            className="preview-message their"
-                                            style={{
-                                                background: theme.gradients.theirMessage,
-                                                color: theme.colors.text
-                                            }}
-                                        >
-                                            Привет!
-                                        </div>
-                                        <div
-                                            className="preview-message my"
-                                            style={{
-                                                background: theme.gradients.myMessage,
-                                                color: theme.colors.myMessageText
-                                            }}
-                                        >
-                                            Как дела?
-                                        </div>
-                                    </div>
-                                    <span className="theme-name">{theme.name}</span>
-                                </div>
+            <div className="border-t border-white/10 pt-3">
+                <h4 className="text-gray-300 text-xs font-medium mb-2">Загрузить свой фон</h4>
+                <div className="flex items-center gap-2">
+                    <ImageChat
+                        forChatBackground={true}
+                        onBackgroundSet={handleBackgroundSet}
+                        currentBackground={selectedBackground}
+                    />
+                    {selectedBackground && (
+                        <button
+                            onClick={handleRemoveBackground}
+                            className="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs rounded-lg transition-colors border-none cursor-pointer"
+                        >
+                            Удалить
+                        </button>
+                    )}
+                </div>
+
+                {userBackgrounds && (
+                    <div className="mt-3">
+                        <h4 className="text-gray-300 text-xs font-medium mb-2">Мои фоны</h4>
+                        <div className="backgrounds-grid" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {(Array.isArray(userBackgrounds) ? userBackgrounds : [userBackgrounds]).map((img, i) => (
+                                <img key={i} src={img.path_image || img} className="w-14 h-14 rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleBackgroundSet(img.path_image || img)} />
                             ))}
                         </div>
-
-                        <div className="theme-custom-section">
-                            <div className="custom-theme-controls">
-                                <div className="background-section">
-                                    <h4>Загрузить новый фон</h4>
-                                    <div className="background-controls">
-                                        <ImageChat
-                                            forChatBackground={true}
-                                            onBackgroundSet={handleBackgroundSet}
-                                            currentBackground={selectedBackground}
-                                        />
-                                    </div>
-
-                                    {userBackgrounds && (
-    <div className="existing-backgrounds">
-        <h4>Мои фоны</h4>
-        <div className="backgrounds-grid">
-            {Array.isArray(userBackgrounds) ? (
-                userBackgrounds.map((image) => (
-                    <div>
-                        <img
-                            src={image.path_image}
-                        />
                     </div>
-                ))
-            ) : (
-                <div>
-                    <img
-                        src={userBackgrounds}
-                    />
-                </div>
-            )}
-        </div>
-    </div>
-)}
-
-                                    {selectedBackground && (
-                                        <div className="background-preview">
-                                            <button
-                                                onClick={handleRemoveBackground}
-                                                className="remove-background-btn"
-                                            >
-                                                Удалить текущий фон
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

@@ -29,27 +29,30 @@ const UserProfile = () => {
     const { userId } = useParams();
 
     const currentUser = useSelector(state => state.user.user);
+    const { onlineUsers } = useSelector(state => state.online);
 
 
 
 
     const {
-        data: profile,
+         data: profileResponse, 
         isLoading: isProfileLoading,
         error: profileError,
         refetch: refetchProfile
     } = useGetProfileQuery(userId, {
         skip: !userId,
-        selectFromResult: (result) => ({
-            ...result,
-            data: result.data?.data?.user || result.data,
-        }),
+        
     });
-
+  
+     const profile = profileResponse?.profile;
     const isBlocked = profile?.is_blocked || false;
     const hasBlockedThisUser = profile?.has_blocked_this_user || false;
 
-
+const getUserId = () => {
+    return profile?.id 
+        || profileResponse?.data?.id 
+        || profileResponse?.id;
+};
     const {
         privacyInfo,
         isLoading: isPrivacyLoading,
@@ -63,7 +66,7 @@ const UserProfile = () => {
         error: friendshipError,
         sendRequest,
         checkStatus: refetchFriendship
-    } = useFriendshipStatus(profile || currentUser);
+    } = useFriendshipStatus(profile || currentUser, currentUser);
 
     const totalFriends = friends?.length || 0;
     const [blockUserMutation] = useBlockUserMutation();
@@ -75,24 +78,24 @@ const UserProfile = () => {
 
 
 
-    const handleBlockToggle = async () => {
-        if (!profile?.user_id || !currentUser) return;
+   const handleBlockToggle = async () => {
+    if (!profile?.user_id || !currentUser) return;
 
-        try {
-
-
-            if (!hasBlockedThisUser) {
-                await blockUser(profile.id).unwrap(); 
-            } else {
-                await unblockUser(profile.id).unwrap();
-            }
-            refetchProfile();
-            refetchPrivacy();
-        } catch (err) {
-            console.error('Block toggle error:', err);
-            setLocalError('Не удалось изменить статус блокировки');
+    try {
+        if (!hasBlockedThisUser) {
+            
+            await blockUserMutation(profile.id).unwrap();
+        } else {
+           
+            await unblockUserMutation(profile.id).unwrap();
         }
-    };
+        refetchProfile();
+        refetchPrivacy();
+    } catch (err) {
+        console.error('Block toggle error:', err);
+        
+    }
+};
 
     const handleAddFriend = async () => {
         if (friendshipStatus !== 'not_friends') return;
@@ -100,7 +103,7 @@ const UserProfile = () => {
         const result = await sendRequest();
 
         if (!result.success) {
-            setLocalError(result.error || 'Произошла ошибка');
+            console.error(result.error || 'Произошла ошибка');
         }
     };
 
@@ -119,18 +122,18 @@ const UserProfile = () => {
         return <LoadingSpinner text="Загрузка профиля" />;
     }
 
-    if (error || privacyError || friendshipError) {
-        return (
-            <ErrorMessage
-                message={error || privacyError || friendshipError}
-                onRetry={() => {
-                    refetchProfile();
-                    refetchPrivacy();
-                    refetchFriendship();
-                }}
-            />
-        );
-    }
+if (profileError) {
+    return (
+        <ErrorMessage
+            message={profileError?.data?.message || profileError?.message || privacyError || friendshipError || 'Ошибка загрузки профиля'}
+            onRetry={() => {
+                refetchProfile();
+                refetchPrivacy();
+                refetchFriendship();
+            }}
+        />
+    );
+}
 
     if (!profile) {
         return <NotFoundMessage onBack={() => navigate('/')} />;
@@ -150,25 +153,28 @@ const UserProfile = () => {
         );
     }
     return (
-        <div className="flex flex-col lg:flex-row gap-5 max-w-7xl mx-auto p-5 min-h-screen box-border">
+        <div className="flex flex-col lg:flex-row gap-5 max-w-7xl mx-auto px-1 py-5 md:px-5 min-h-screen box-border">
 
             <div className="flex-1 min-w-0">
                 <div className="rounded-xl p-4 mb-5 shadow-lg " style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }}>
 
 
 
-                    <div className="flex flex-col md:flex-row p-8 gap-8 border-b border-gray-700 relative">
+                    <div className="flex flex-col md:flex-row p-6 md:p-8 gap-6 md:gap-8 border-b border-gray-700 relative">
 
-                        <div className="flex-1">
+                        <div className="flex justify-center md:justify-start relative">
                             <img
-                                src={profile?.avatar || 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13'}
-                                className="w-36 h-36 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg ring-3 ring-blue-500"
+                                src={profile?.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
+                                className="w-48 h-48 md:w-52 md:h-52 lg:w-56 lg:h-56 rounded-full object-cover border-4 border-white shadow-lg ring-3 ring-blue-500"
                                 alt="Аватар профиля"
                             />
+                            {onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') && (
+                                <span className="absolute bottom-4 right-4 w-5 h-5 bg-green-500 border-3 border-[rgba(1,14,24,0.946)] rounded-full"></span>
+                            )}
                         </div>
 
 
-                        <div className="flex flex-col gap-3 mt-5">
+                        <div className="flex flex-col gap-3 mt-5 items-center md:items-start w-full md:w-auto">
                             {profile && (
                              <>
                              <FriendButton
@@ -176,37 +182,46 @@ const UserProfile = () => {
                                  isLoading={isFriendshipLoading}
                                  disabled={['friends', 'request_sent', 'request_received'].includes(friendshipStatus)}
                                  onClick={handleAddFriend}
+                                 className="w-full"
                              />
 
                              <MessageButton
-                                 recipientId={profile.data.user_id}
-                                 recipientName={profile.data?.name}
+                                 recipientId={getUserId()}
+                                 recipientName={profile.name}
                                  disabled={false}
+                                 className="w-full"
                              />
 
                              <BlockButton
                                  isBlocked={hasBlockedThisUser}
                                  disabled={false}
                                  onClick={handleBlockToggle}
+                                 className="w-full"
                              />
                          </>
                             )}
-                            <ProfileDetail userId={profile?.data.user_id} />
+                            <ProfileDetail userId={ getUserId () } />
                         </div>
 
 
 
-    <div className="flex-1 mt-3">
+    <div className="flex-1 mt-3 text-center md:text-left">
         <h3 className="text-xl font-semibold text-white mb-4">Информация об аккаунте</h3>
         <div className="space-y-2">
             <div className="flex items-center text-lg text-white">
                 <strong className="text-gray-300 font-medium min-w-32">ID пользователя:</strong>
-                {profile.data.user.id}
+            { getUserId( )}
             </div>
             <div className="flex items-center text-lg text-white">
                 <strong className="text-white font-semibold text-xl min-w-32">
-                    {profile.data.name}
+                    {profile.name}
                 </strong>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className={`text-sm ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'text-green-400' : 'text-gray-400'}`}>
+                    {onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'В сети' : 'Не в сети'}
+                </span>
             </div>
 
         </div>
@@ -215,7 +230,7 @@ const UserProfile = () => {
                     </div>
                 </div>
                 {privacyInfo.canViewImages ? (
-                    <div className="p-5">
+                    <div className="p-2 md:p-5">
                         <UserImages userId={parseInt(userId)} />
                     </div>
                 ) : (
@@ -264,7 +279,7 @@ const UserProfile = () => {
                                     title={friend.name}
                                 >
                                     <img
-                                        src={friend.avatar || 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13'}
+                                        src={friend.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
                                         alt={friend.name}
                                         className="w-16 h-16 md:w-18 md:h-18 rounded-full object-cover border-2 border-gray-200 mb-1.5"
                                     />

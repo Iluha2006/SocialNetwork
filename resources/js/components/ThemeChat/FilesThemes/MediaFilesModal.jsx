@@ -65,7 +65,7 @@ const {
             case 'pdf':
                 return <img width='40' height='40' src='https://avatars.mds.yandex.net/i?id=dce9f320cfc5621bd3d680c2c9bc5cdd155f59b0-2479991-images-thumbs&n=13' alt="PDF"/>;
             case 'doc': case 'docx':
-                return <img width='40' height='40' src='https://logos-world.net/wp-content/uploads/2020/03/Microsoft-Word-Logo-2013-2019.png' alt="Word"/>;
+                return '📝';
             case 'txt':
                 return '📃';
             case 'zip': case 'rar':

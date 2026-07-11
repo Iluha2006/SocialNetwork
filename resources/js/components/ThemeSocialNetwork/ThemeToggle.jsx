@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { initTheme, toggleTheme } from '../../store/Theme/themeSlice';
+import { applyAppTheme, applyTextGradient } from '../../store/Theme/appThemes';
 import './Theme.css';
 
 const ThemeToggle = () => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.user);
   const theme = useSelector(state => state.theme.value);
+  const appThemeName = useSelector(state => state.theme.appThemeName);
+  const textGradient = useSelector(state => state.theme.textGradient);
 
   useEffect(() => {
     if (user?.id) {
@@ -14,6 +17,14 @@ const ThemeToggle = () => {
     }
   }, [user?.id, dispatch]);
 
+  useEffect(() => {
+    if (appThemeName) {
+      applyAppTheme(appThemeName);
+    }
+    if (textGradient) {
+      applyTextGradient(textGradient);
+    }
+  }, [appThemeName, textGradient]);
 
   if (!user) {
     return null;
@@ -24,9 +35,7 @@ const ThemeToggle = () => {
   };
 
   return (
-
     <div className='toggle '> 
-
     <button
       className="theme-toggle"
       onClick={handleToggle}

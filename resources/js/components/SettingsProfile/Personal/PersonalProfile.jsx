@@ -48,12 +48,12 @@ const PersonalProfile = () => {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center py-3 border-b border-gray-700">
                                 <label className="font-semibold text-gray-300 min-w-[150px]">Имя пользователя:</label>
-                                <span className="text-gray-200 font-medium">{user?.name}</span>
+                                <span className="text-gray-200 font-medium">{profile?.name}</span>
                             </div>
 
                             <div className="flex justify-between items-center py-3 border-b border-gray-700">
                                 <label className="font-semibold text-gray-300 min-w-[150px]">О себе:</label>
-                                <span className="text-gray-200 font-medium">{user?.bio || 'Не указано'}</span>
+                                <span className="text-gray-200 font-medium">{profile?.bio || 'Не указано'}</span>
                             </div>
 
                         </div>
@@ -76,7 +76,7 @@ const PersonalProfile = () => {
                                     type="text"
                                     id="name"
                                     name="name"
-                                    value={formData.name}
+                                    value={profile.name}
                                     onChange={handleInputChange}
                                     className="px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Введите ваше имя"
@@ -92,7 +92,7 @@ const PersonalProfile = () => {
                                 <textarea
                                     id="bio"
                                     name="bio"
-                                    value={formData.bio}
+                                    value={profile.bio}
                                     onChange={handleInputChange}
                                     className="px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none"
                                     placeholder="Информация о себе"
@@ -104,7 +104,7 @@ const PersonalProfile = () => {
                             <button
                                 type="submit"
                                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={!formData.name.trim() || isUpdating}
+                                disabled={!profile.name.trim() || isUpdating}
                             >
                                 {isUpdating ? (
                                     <span className="flex items-center gap-2">

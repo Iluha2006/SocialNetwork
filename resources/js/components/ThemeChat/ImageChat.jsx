@@ -72,22 +72,27 @@ const ImageChat = (props) => {
 
 
     return (
-        <div className="image-container">
+        <div className="flex flex-col items-start gap-2">
             <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileSelect}
                 accept="image/*"
-                style={{ display: "none" }}
+                className="hidden"
             />
 
-            <div className="chat-background-controls">
-                <div className="background-actions">
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
                     <button
                         type="button"
                         onClick={handleClick}
 
-                        className="background-btn"
+                        className="w-47 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r
+                         from-blue-500 to-blue-600 hover:from-blue-300
+                          hover:to-blue-700 text-white font-medium rounded-xl 
+                          shadow-md hover:shadow-lg transition-all duration-200 
+                          transform hover:scale-[1.02] active:scale-[0.98] 
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -103,23 +108,18 @@ const ImageChat = (props) => {
                         <span>Выбрать фон для чата</span>
                     </button>
 
+                </div>
                     {currentBackground && (
-                        <div className="background-status">
-                            <span style={{ color: "green", fontSize: "12px" }}>
-                                ✓ Фон установлен
-                            </span>
+                        <div className="bg-green-500/10 text-green-500 text-xs px-2 py-1 rounded-md">
+                            ✓ Фон установлен
                         </div>
                     )}
-                </div>
             </div>
 
 
 
             {(localError || error) && (
-                <div
-                    className="error-message"
-                    style={{ color: "red", marginTop: "10px", fontSize: "12px" }}
-                >
+                <div className="text-red-500 text-xs mt-2">
                     {localError || error}
                 </div>
             )}

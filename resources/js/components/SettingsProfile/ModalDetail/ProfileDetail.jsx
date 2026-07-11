@@ -7,11 +7,10 @@ const ProfileDetail = (props) => {
   const { userId } = props;
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.user);
-  const profileFromSlice = useSelector(state => state.profile.profile);
+  
   const { contact, loading, error } = useSelector(state => state.contacts);
   const { carers=[], loading: carersLoading, error: carersError } = useSelector(state => state.carers);
   const [modalOpen, setModalOpen] = useState(false);
-  const profileBio = profileFromSlice?.bio;
   const targetUserId = userId || user?.id;
   const {
     data: profileData,
@@ -26,6 +25,8 @@ const ProfileDetail = (props) => {
   const toggleModal = () => {
     setModalOpen(!modalOpen);
   };
+
+  const profile = profileData?.profile
 
   useEffect(() => {
     if (targetUserId) {
@@ -83,10 +84,7 @@ const ProfileDetail = (props) => {
                       <span className="text-gray-200 font-medium">{userContacts.phone || 'Не указан'}</span>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-gray-800">
-  <strong className="text-gray-300 font-semibold min-w-20">О себе</strong>
-  <span className="text-gray-200 font-medium">
-    {profileBio || userContacts?.bio || 'Не указан'}
-  </span>
+  
 </div>
                   </div>
                 ) : (

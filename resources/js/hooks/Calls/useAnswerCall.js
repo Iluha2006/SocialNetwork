@@ -1,60 +1,45 @@
-import { useCallback, useEffect } from 'react';
-import { handleOffer } from '../../WebRTC/CreateAnswer';
-import { useSelector } from 'react-redux';
-import { usePeerConnection } from './usePeerConnection';
 
-export const useCallAnswer = (onIncomingCall) => {
+import { useCallback, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { usePeerConnection } from './usePeerConnection';
+import { Answer } from '../../WebRTC/Answer';
+
+export const useAnswerCall = () => {
     const { peerConnectionRef, createPeerConnection, getLocalStream } = usePeerConnection();
     const { user } = useSelector(state => state.user);
+   const iceChannelRef = useRef(null);
+    const acceptCall = useCallback(async (callId, callerId, remoteOffer) => {
+        try {
+            peerConnectionRef.current = createPeerConnection();
+            const localStream = await getLocalStream();
 
-    useEffect(() => {
-        if (!user?.id) return;
+            const answer = await Answer(peerConnectionRef, remoteOffer, null, null, localStream);
 
-        const channel = window.Echo.private(`user.${user.id}`);
-        const offerHandler = async (data) => {
-            try {
-                if (onIncomingCall) onIncomingCall(data);
+           console.log( "answer", answer)
+            await axios.post(`/calls/accept/${callId}`, {
+                sdp_answer: answer,
+            });
 
-                peerConnectionRef.current = createPeerConnection();
-                const localStream = await getLocalStream();
+      
+            
 
-                const { answer } = await handleOffer(
-                    peerConnectionRef,
-                    data.offer,
-                    data.from,
-                    user.id,
-                    localStream
-                );
+            return {
+                success: true,
+                answer,
+                cleanup: () => {
+                  
+                    if (peerConnectionRef.current) {
+                        peerConnectionRef.current.onicecandidate = null;
+                        peerConnectionRef.current.close();
+                    }
+                }
+            };
+        } catch (error) {
+            console.error(' Error accepting call:', error);
+            throw error;
+        }
+    }, [user, createPeerConnection, getLocalStream]);
 
-                // 📡 Отправка answer обратно
-                window.Echo.private(`user.${data.from}`)
-                    .whisper('webrtc.answer', {
-                        answer: answer,
-                        from: user.id
-                    });
-
-            } catch (error) {
-                console.error('❌ Error handling WebRTC offer:', error);
-            }
-        };
-
-        // 📡 Обработка ICE кандидатов
-        const iceHandler = (data) => {
-            if (peerConnectionRef.current) {
-                peerConnectionRef.current.addIceCandidate(
-                    new RTCIceCandidate(data.candidate)
-                ).catch(err => console.error('ICE error:', err));
-            }
-        };
-
-        channel.listen('webrtc.offer', offerHandler)
-               .listen('webrtc.ice-candidate', iceHandler);
-
-        return () => {
-            channel.stopListening('webrtc.offer', offerHandler)
-                   .stopListening('webrtc.ice-candidate', iceHandler);
-        };
-    }, [user?.id, onIncomingCall, createPeerConnection, getLocalStream]);
-
-    return {useCallAnswer};
+    return { acceptCall };
 };

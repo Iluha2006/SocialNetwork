@@ -1,65 +1,38 @@
-import { useCallback } from 'react';
 
-import { createOffer } from '../../WebRTC/CreateOffer';
-import { useSelector } from 'react-redux';
+import { useCallback } from 'react';
 import { usePeerConnection } from './usePeerConnection';
+import { createOffer } from '../../WebRTC/CreateOffer';
 
 export const useOfferCall = () => {
     const { peerConnectionRef, createPeerConnection, getLocalStream } = usePeerConnection();
-    const { user } = useSelector(state => state.user);
 
-    const startCall = useCallback(async (receiverId) => {
+    const startCall = useCallback(async (receiverId, callId) => {
         try {
             peerConnectionRef.current = createPeerConnection();
             const localStream = await getLocalStream();
-            const offer = await createOffer(peerConnectionRef, receiverId, user.id, localStream);
 
-
-            window.Echo.private(`user.${receiverId}`)
-                .whisper('webrtc.offer', {
-                   offer:{
-                    offer: offer,
-                    from: user.id,
-                    call_type: 'audio'
-                   }
-                });
-
-
-            const answerHandler = (data) => {
-                if (data.from === receiverId && peerConnectionRef.current) {
-                    peerConnectionRef.current.setRemoteDescription(
-                        new RTCSessionDescription(data.answer)
-                    );
-                }
-            };
-
-            const iceHandler = (data) => {
-                if (data.from === receiverId && peerConnectionRef.current) {
-                    peerConnectionRef.current.addIceCandidate(
-                        new RTCIceCandidate(data.candidate)
-                    );
-                }
-            };
-
-            window.Echo.private(`user.${user.id}`)
-                .listen('webrtc.answer', answerHandler)
-                .listen('webrtc.ice-candidate', iceHandler);
-
+            const offer = await createOffer(peerConnectionRef, localStream);
 
             return {
                 success: true,
                 offer,
                 cleanup: () => {
-                    window.Echo.private(`user.${user.id}`)
-                        .stopListening('webrtc.answer', answerHandler)
-                        .stopListening('webrtc.ice-candidate', iceHandler);
+                    if (peerConnectionRef.current) {
+                        peerConnectionRef.current.onicecandidate = null;
+                        peerConnectionRef.current.close();
+                    }
                 }
             };
         } catch (error) {
-            console.error('❌ Error starting call:', error);
+            if (peerConnectionRef.current) {
+                peerConnectionRef.current.onicecandidate = null;
+                peerConnectionRef.current.close();
+                peerConnectionRef.current = null;
+            }
+            console.error('Error starting call:', error);
             throw error;
         }
-    }, [user?.id, createPeerConnection, getLocalStream]);
+    }, [createPeerConnection, getLocalStream, peerConnectionRef]);
 
     return { startCall };
 };

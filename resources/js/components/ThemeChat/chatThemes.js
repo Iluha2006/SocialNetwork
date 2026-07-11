@@ -127,7 +127,7 @@ export const chatThemes = {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             messageBg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
             myMessageBg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            text: '#ffffff',
+            text: '#0d1b3e',
             myMessageText: '#ffffff',
             border: 'rgba(255,255,255,0.2)'
         }
@@ -137,14 +137,16 @@ export const chatThemes = {
 
 export const getDefaultTheme = () => 'default';
 
+const toKebabCase = (str) => str.replace(/([A-Z])/g, '-$1').toLowerCase();
+
 export const applyThemeToDocument = (theme) => {
     const root = document.documentElement;
 
     Object.entries(theme.gradients).forEach(([key, value]) => {
-        root.style.setProperty(`--chat-${key}-gradient`, value);
+        root.style.setProperty(`--chat-${toKebabCase(key)}-gradient`, value);
     });
 
     Object.entries(theme.colors).forEach(([key, value]) => {
-        root.style.setProperty(`--chat-${key}`, value);
+        root.style.setProperty(`--chat-${toKebabCase(key)}`, value);
     });
 };

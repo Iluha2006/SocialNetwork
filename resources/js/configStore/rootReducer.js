@@ -22,8 +22,16 @@ import userSlice from '../store/Auth/UserStore';
 import { persistedCarerProfileReducer } from '../store/settings/Carer';
 import { oauthApi } from '../api/OauthApi';
 import profileApi from '../api/modules/profileApi';
+
+
+import postsApi from '../api/modules/postApi';
+import commentsApi from '../api/modules/commentsApi';
 import themeSlice from '../store/Theme/themeSlice'
 import oauthSlice from '../store/Auth/Oauth'
+
+import { likePostApi } from '../api/modules/likePost';
+import likesReducer from '../store//PostUser/likesSlice';
+
 const rootReducer = combineReducers({
     privateProfile: persistedPrivateProfileReducer,
     user: userSlice,
@@ -41,11 +49,15 @@ const rootReducer = combineReducers({
     profile: persistedProfileReducer,
     carers: carerReducer,
     files: persistedFilesReducer,
+    likes: likesReducer,
     audio: persistedAudioReducer,
     [oauthApi.reducerPath]: oauthApi.reducer,
     theme: themeSlice,
     [authApi.reducerPath]: authApi.reducer,
+      [postsApi.reducerPath]: postsApi.reducer,
+        [commentsApi.reducerPath]: commentsApi.reducer,
     [profileApi.reducerPath]: profileApi.reducer,
+     [likePostApi.reducerPath]: likePostApi.reducer,
     [chatsApi.reducerPath]: chatsApi.reducer,
     [messagesApi.reducerPath]: messagesApi.reducer,
     [conversationsApi.reducerPath]: conversationsApi.reducer,

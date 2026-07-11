@@ -11,10 +11,7 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 let echoInstance = null;
 
-/**
- *
- * @param {Object} config
- */
+
 export function getEcho(config = null) {
 
 
@@ -28,7 +25,6 @@ export function getEcho(config = null) {
       encrypted: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
       enabledTransports: ['ws', 'wss'],
       disableStats: true,
-
       authorizer: (channel, options) => {
         return {
           authorize: async (socketId, callback) => {
@@ -49,13 +45,17 @@ export function getEcho(config = null) {
               );
               callback(false, response.data);
             } catch (error) {
-              console.error(` Auth failed for ${channel.name}:`, error.response?.data);
+              console.error(`Auth failed for ${channel.name}:`, error.response?.data || error.message);
               callback(true, error.response?.data || { error: 'Auth failed' });
             }
           }
         };
       }
     });
+  }
+
+  if (!window.Echo) {
+    window.Echo = echoInstance;
   }
 
   return echoInstance;

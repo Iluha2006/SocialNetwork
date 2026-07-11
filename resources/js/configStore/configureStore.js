@@ -10,16 +10,22 @@ import { conversationsApi } from '../api/modules/conversations';
 import { searchApi } from '../api/modules/search';
 import rootReducer from './rootReducer';
 import profileApi from '../api/modules/profileApi';
+ import postsApi from '../api/modules/postApi';
 import { oauthApi } from '../api/OauthApi';
 import storage from 'redux-persist/lib/storage';
 import autoMergeLevel2 from 'redux-persist/lib/stateReconciler/autoMergeLevel2';
+import likePostApi from '../api/modules/likePost';
 
+
+import commentsApi from '../api/modules/commentsApi';
+
+import likesReducer from '../store//PostUser/likesSlice';
 
 const persistConfig = {
     key: 'root',
     storage,
     stateReconciler: autoMergeLevel2,
-    whitelist: ['user','profile'], //'user', 'oauth', 'profile','chat'
+    whitelist: ['user','profile','oauth','chat'],
     blacklist: ['calls', 'online', 'search', ],
 };
 
@@ -37,6 +43,9 @@ export const store = configureStore({
         authApi.middleware,
         oauthApi.middleware,
         chatsApi.middleware,
+        postsApi.middleware,
+        likePostApi.middleware,
+        commentsApi.middleware,
         messagesApi.middleware,
         conversationsApi.middleware,
         searchApi.middleware,
