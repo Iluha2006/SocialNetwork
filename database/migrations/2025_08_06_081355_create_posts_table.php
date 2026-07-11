@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('images')->nullable();
             $table->text('videos')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+             $table->integer('likes_count')->default(0)->after('user_id');
             $table->timestamps();
             $table->index('user_id');
         });

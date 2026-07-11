@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\TokenFromCookie;
+use App\Http\Middleware\UpdateOnlineStatus;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,11 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
 
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
 
+
+        $middleware->appendToGroup('web', UpdateOnlineStatus::class);
 
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class,

@@ -1,35 +1,30 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useLoginMutation } from '../../api/authApi';
 
 import AuthErrorNotification from './Notification/AuthErrorNotification';
-import { useYandexCallbackMutation } from '../../api/OauthApi';
 import LoginYandex from './SocialiteAuth/loginYandex';
 
  const  Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
-  const code = searchParams.get('code');
   const [loginMutation, {isLoading} ] = useLoginMutation();
-  const [yandexCallback] = useYandexCallbackMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
     try {
-        const result = await loginMutation({ email, password });
-
-           console.log("Данные после входа", result)
-
-
+        await loginMutation({ email, password }).unwrap();
         navigate('/home', { replace: true });
     } catch (err) {
-        console.error('Login failed:', err);
+        const message = err?.data?.message || 'Ошибка входа';
+        const validation = err?.data?.errors || {};
+        setErrors({
+            general: { message },
+            validation,
+        });
     }
 };
 
@@ -104,6 +99,7 @@ import LoginYandex from './SocialiteAuth/loginYandex';
           />
         </div>
 
+        {renderError()}
         <button
           type="submit"
           disabled={isLoading}

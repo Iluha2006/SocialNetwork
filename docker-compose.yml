@@ -1,4 +1,5 @@
 services:
+  # 🔹 PHP-FPM (для работы с Nginx)
   php:
     build:
       context: .
@@ -7,89 +8,236 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-    ports:
-      - "8000:8000"
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=
       - REDIS_PORT=6379
-      - AWS_ENDPOINT=http://storage:9000
+      - REDIS_CLIENT=phpredis
       - REVERB_HOST=reverb
-      - REVERB_PORT=8080
-      - PUSHER_HOST=reverb
-      - PUSHER_PORT=8080
+      - REVERB_PORT=6001
+      - REVERB_SCHEME=http
+      - AWS_ACCESS_KEY_ID=minio124
+      - AWS_SECRET_ACCESS_KEY=minio1235
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_BUCKET=social-media
+      - AWS_ENDPOINT=http://storage:9000
+      - AWS_USE_PATH_STYLE_ENDPOINT=true
+      - FILESYSTEM_DISK=s3
+    
     depends_on:
       redis:
-        condition: service_started
-      reverb:
-        condition: service_started
+        condition: service_healthy
       storage:
-        condition: service_started
+        condition: service_healthy  
     networks:
       - app-network
+   
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep php-fpm || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  reverb:
-    image: php:8.2-cli
-    container_name: laravel_reverb
+ 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_worker
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-    command: php artisan reverb:start
+    command: php artisan queue:work --queue=broadcast,media,default --tries=3 --timeout=300 --sleep=3
     environment:
       - APP_ENV=local
-      - APP_DEBUG=true
-      - REVERB_HOST=0.0.0.0
-      - REVERB_PORT=8080
       - REDIS_HOST=redis
-    ports:
-      - "8080:8080"
+      - REDIS_PASSWORD=
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=phpredis
+      - REVERB_HOST=reverb
+      - REVERB_PORT=6001
+      - REVERB_SCHEME=http
+      - AWS_URL=http://localhost:9000
+      - AWS_ENDPOINT=http://storage:9000
+      - AWS_BUCKET=social-media
+      - AWS_ACCESS_KEY_ID=minio124
+      - AWS_SECRET_ACCESS_KEY=minio1235
     depends_on:
-      - redis
+      php:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
+
+
   nginx:
     build:
       context: .
       dockerfile: Dockerfile.nginx
-    container_name: laravel_nginx
+    container_name: laravel_nginx  # 🔥 Простое имя без спецсимволов
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:80"   # 🔥 Хост:8080 → Контейнер:80
+      - "8443:443"  # 🔥 HTTPS (опционально)
     volumes:
       - ./:/var/www/html
-      - ./docker/nginx.conf:/tmp/nginx.conf:ro
     depends_on:
-      - php
+      php:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
+
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: laravel_postgres
+    environment:
+      POSTGRES_DB: SocialNetwork
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 23paer2007
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: laravel_redis
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   storage:
-    image: minio/minio
+    image: minio/minio:latest
     container_name: minio
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: minio124
       MINIO_ROOT_PASSWORD: minio1235
+      MINIO_BUCKET: social-media  # 🔥 Авто-создание бакета (MinIO 2023+)
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000:9000"  # API
+      - "9001:9001"  # Console UI
     volumes:
       - ministorage_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
+  node:
+    image: node:22-alpine
+    container_name: laravel_node
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: sh -c "npm install && npx vite --host 0.0.0.0"
     ports:
-      - "6379:6379"
+      - "5173:5173"
+    environment:
+      - VITE_PROXY_TARGET=http://nginx
+      - VITE_HOST=0.0.0.0
+      - VITE_HMR_HOST=localhost
+      - VITE_REVERB_APP_KEY=wdqp1oq3yoyujpmnz8tw
+      - VITE_REVERB_HOST=localhost
+      - VITE_REVERB_PORT=6001
+      - VITE_REVERB_SCHEME=http
+    depends_on:
+      - nginx
     networks:
       - app-network
+    restart: unless-stopped
+
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_horizon
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: php artisan horizon
+    environment:
+      - APP_ENV=local
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=phpredis
+      - REVERB_HOST=reverb
+      - REVERB_PORT=6001
+      - REVERB_SCHEME=http
+      - AWS_ENDPOINT=http://storage:9000
+      - AWS_BUCKET=social-media
+      - AWS_ACCESS_KEY_ID=minio124
+      - AWS_SECRET_ACCESS_KEY=minio1235
+    depends_on:
+      php:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_reverb
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: php artisan reverb:start
+    ports:
+      - "6001:6001"
+    environment:
+      - APP_ENV=local
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=phpredis
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=6001
+      - REVERB_SCHEME=http
+      - REVERB_APP_ID=568280
+      - REVERB_APP_KEY=wdqp1oq3yoyujpmnz8tw
+      - REVERB_APP_SECRET=spfuyx8e1gbehurny2s0
+    depends_on:
+      php:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
+  postgres_data:
   ministorage_data:

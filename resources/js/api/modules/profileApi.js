@@ -17,11 +17,35 @@ export const profileApi = createApi({
 
     endpoints: (build) => ({
 
-        getProfile: build.query({
-            query: (userId) => `/profile/${userId}`,
-            providesTags: (result, error, userId) => [{ type: 'Profile', id: userId }],
+    
 
-        }),
+getProfile: build.query({
+    query: (userId) => `/profile/${userId}`,
+    providesTags: (result, error, userId) => [{ type: 'Profile', id: userId }],
+    
+  
+    transformResponse: (response) => {
+    
+        if (response?.profile) return response;
+        
+  
+        if (response?.data?.profile) {
+            return { profile: response.data.profile };
+        }
+        
+        
+        if (response?.id && response?.name) {
+            return { profile: response };
+        }
+        
+      
+        if (response?.data?.user) {
+            return { profile: response.data.user };
+        }
+        
+        return response || {};
+    },
+}),
 
 
 updateProfile: build.mutation({

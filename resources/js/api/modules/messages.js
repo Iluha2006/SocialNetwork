@@ -1,6 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithCsrf } from '../configAuth';
 import { addMessage, editMessage, removeMessage } from '../../store/ChatMessengers/chatSlice';
+import { conversationsApi } from './conversations';
 
 export const messagesApi = createApi({
     reducerPath: 'messagesApi',
@@ -26,58 +27,49 @@ export const messagesApi = createApi({
 
 
             async onQueryStarted({ receiverId, content, image, file, senderId }, { dispatch, queryFulfilled }) {
-
-
                 const tempId = `opt_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
                 const timestamp = Date.now() / 1000;
 
                 const patchResult = dispatch(
-                    messagesApi.util.updateQueryData('loadConversationMessages', receiverId, (draft) => {
-
-                        draft.push({
+                    conversationsApi.util.updateQueryData('loadConversationMessages', receiverId, (draft) => {
+                        draft.messages.push({
                             id: tempId,
                             sender_id: senderId,
                             receiver_id: receiverId,
                             content: content || '',
-                            images: image ? [image] : null,
-                            file: file || null,
+                            images: image ? 'pending' : null,
+                            file: file ? 'pending' : null,
+                            file_name: file?.name || null,
                             created_at: new Date(timestamp * 1000).toISOString(),
-
+                            type: image ? 'image' : file ? 'file' : 'text',
+                            is_optimistic: true,
+                            status: 'sending',
                         });
                     })
                 );
 
                 try {
-
                     const { data } = await queryFulfilled;
-
 
                     if (data?.success && data?.data) {
                         const realMessage = data.data;
 
-                        if (index !== -1) {
-
-                            draft[index] = {
-                                ...realMessage,
-
-                            };
-                        } else {
-
-                            draft.push({
-                                ...realMessage,
-                                is_optimistic: false,
-                                status: 'sent'
-                            });
-                        }
+                        dispatch(
+                            conversationsApi.util.updateQueryData('loadConversationMessages', receiverId, (draft) => {
+                                const idx = draft.messages.findIndex(m => m.id === tempId);
+                                if (idx !== -1) {
+                                    draft.messages[idx] = { ...realMessage, is_optimistic: false, status: 'sent' };
+                                }
+                            })
+                        );
                     }
                 } catch (err) {
-
                     patchResult.undo();
                     console.error('Failed to send message:', err);
                 }
             },
 
-                 invalidatesTags: (result, error, { receiverId }) => [
+                invalidatesTags: (result, error, { receiverId }) => [
                 { type: 'Chats', id: receiverId },
                 { type: 'Messages', id: 'LIST' }
             ],
@@ -85,25 +77,26 @@ export const messagesApi = createApi({
 
 
         deleteMessage: build.mutation({
-            query: (messageId) => ({
+            query: ({ messageId }) => ({
                 url: `/messages/${messageId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, error, messageId) =>
+            invalidatesTags: (result, error, { messageId }) =>
                 result ? [{ type: 'Messages', id: messageId }] : [{ type: 'Messages', id: 'LIST' }],
 
 
-            async onQueryStarted(messageId, { dispatch, queryFulfilled }) {
-
+            async onQueryStarted({ messageId, receiverId }, { dispatch, queryFulfilled }) {
                 const patchResult = dispatch(
-                    messagesApi.util.updateQueryData('loadConversationMessages', conversationKey, (draft) => {
-                        return draft.filter(m => m.id !== messageId);
+                    conversationsApi.util.updateQueryData('loadConversationMessages', receiverId, (draft) => {
+                        draft.messages = draft.messages.filter(m => m.id !== messageId);
                     })
                 );
 
                 try {
-                    await queryFulfilled;
-
+                    const { data } = await queryFulfilled;
+                    if (data?.success) {
+                        dispatch(removeMessage(messageId));
+                    }
                 } catch (err) {
                     patchResult.undo();
                     console.error('Failed to delete message:', err);

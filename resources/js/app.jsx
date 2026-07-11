@@ -11,7 +11,7 @@ const root = ReactDOM.createRoot(document.getElementById('app'));
 root.render(
     <React.StrictMode>
         <Provider store={store}>
-            <PersistGate  persistor={persistor}>
+            <PersistGate persistor={persistor} loading={<div className="flex items-center justify-center min-h-screen text-gray-400">Загрузка...</div>}>
                 <App />
             </PersistGate>
         </Provider>

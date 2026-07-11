@@ -1,13 +1,13 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { rejectFriendRequest } from '../../store/Friends/FriendList';
+import { cancelFriendRequest } from '../../store/Friends/FriendList';
 
 const OutgoingRequests = () => {
     const dispatch = useDispatch();
     const { outgoingRequests } = useSelector(state => state.friends);
 
     const handleCancel = (requestId) => {
-        dispatch(rejectFriendRequest(requestId));
+        dispatch(cancelFriendRequest(requestId));
     };
 
     if (outgoingRequests.length === 0) return null;
@@ -24,7 +24,7 @@ const OutgoingRequests = () => {
                         <div className="flex items-center mb-5">
                             <div className="relative mr-5">
                                 <img
-                                    src={request.receiver?.avatar || request.receiver_avatar || 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13'}
+                                    src={request.receiver?.avatar || request.receiver_avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
                                     alt={request.receiver?.name || request.receiver_name}
                                     className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
                                 />

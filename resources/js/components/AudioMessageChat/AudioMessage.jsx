@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAudioMessage, sendMessageAudio } from '../../store/Files/AudioMessage';
-import { createOffer } from '../../WebRTC/CreateOffer';
-import { handleOffer } from '../../WebRTC/CreateAnswer';
-import { handleIceCandidate } from '../../WebRTC/IceCandidateAction';
-import { getEcho } from '../../echo';
+
 
 const AudioMessage = ({ receiverId, compact = false, onSendComplete, onRecordingStateChange }) => {
     const dispatch = useDispatch();
@@ -27,134 +24,8 @@ const AudioMessage = ({ receiverId, compact = false, onSendComplete, onRecording
     const peerConnectionRef = useRef(null);
     const localStreamRef = useRef(null);
 
-    useEffect(() => {
-        initializePeerConnection();
-        return () => {
-            cleanup();
-        };
-    }, []);
 
-    const initializePeerConnection = () => {
-        try {
-            const configuration = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            };
 
-            peerConnectionRef.current = new RTCPeerConnection(configuration);
-
-            peerConnectionRef.current.onicecandidate = (event) => {
-                if (event.candidate && user?.id) {
-                    handleIceCandidate(
-                        event.candidate,
-                        receiverId,
-                        user.id
-                    );
-                }
-            };
-
-            peerConnectionRef.current.ontrack = (event) => {
-                if (event.streams && event.streams[0]) {
-                    const audioElement = new Audio();
-                    audioElement.srcObject = event.streams[0];
-                    audioElement.play().catch(e => {
-                        console.warn('Cannot play real-time audio:', e);
-                    });
-                }
-            };
-
-            peerConnectionRef.current.onconnectionstatechange = () => {
-                const state = peerConnectionRef.current.connectionState;
-                switch(state) {
-                    case 'connected':
-                        setAudioConnection('Соединение установлено')
-                        break;
-                    case 'disconnected':
-                        setAudioConnection('Соединение прервано');
-                        break;
-                    case 'closed':
-                        setAudioConnection('Соединение закрыто');
-                        break;
-                }
-            };
-
-        } catch (error) {
-            setError('Ошибка инициализации аудиосоединения');
-        }
-    };
-
-    const startRecording = async () => {
-        try {
-            setError(null);
-            audioChunksRef.current = [];
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    noiseSuppression: true,
-                    echoCancellation: true,
-                    autoGainControl: true
-                }
-            });
-
-            stream.getTracks().forEach(track => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
-
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
-            });
-
-            mediaRecorderRef.current = mediaRecorder;
-            localStreamRef.current = stream;
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-
-                setAudioBlob(audioBlob);
-                setAudioURL(audioUrl);
-
-                if (localStreamRef.current) {
-                    localStreamRef.current.getTracks().forEach(track => track.stop());
-                }
-            };
-
-            mediaRecorder.start();
-            setIsRecording(true);
-            startTimer();
-
-            onRecordingStateChange?.(true);
-            await createOffer(peerConnectionRef, receiverId, user.id, stream);
-
-        } catch (error) {
-            console.error('Error starting recording:', error);
-            setError('Ошибка доступа к микрофону');
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            stopTimer();
-
-            if (peerConnectionRef.current) {
-                peerConnectionRef.current.close();
-                initializePeerConnection();
-            }
-            onRecordingStateChange?.(true);
-            setError('⏹️ Запись остановлена');
-            setTimeout(() => setError(null), 2000);
-        }
-    };
 
     const sendAudioMessage = async () => {
         if (isSendingRef.current || !audioBlob) return;
@@ -215,80 +86,9 @@ const AudioMessage = ({ receiverId, compact = false, onSendComplete, onRecording
         setTimeout(() => setError(null), 2000);
     };
 
-    const handleIncomingOffer = async (offer) => {
-        await handleOffer(peerConnectionRef, offer, receiverId, user.id);
-    };
 
-    const handleIncomingAnswer = async (answer) => {
-        await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(answer)
-        );
-    };
-
-    const handleIncomingIceCandidate = async (candidate) => {
-        await peerConnectionRef.current.addIceCandidate(
-            new RTCIceCandidate(candidate)
-        );
-    };
-
-    useEffect(() => {
-        const echo = getEcho();
-        const channel = echo.private(`user.${user.id}`);
-
-        channel.listen('.audio.message.sent', (event) => {
-            const isMessageAudio =
-                (event.sender_id === parseInt(user.id) && event.receiver_id === parseInt(receiverId)) ||
-                (event.receiver_id === parseInt(user.id) && event.sender_id === parseInt(receiverId));
-
-            if (isMessageAudio) {
-                dispatch(addAudioMessage({
-                    id: event.id,
-                    sender_id: event.sender_id,
-                    receiver_id: event.receiver_id,
-                    audio_message: event.audio_message,
-                    created_at: new Date(event.created_at).getTime() / 1000,
-                }));
-            }
-        });
-
-        channel.listen('.webrtc.offer', (event) => {
-            if (event.from === parseInt(receiverId)) {
-                handleIncomingOffer(event.offer);
-            }
-        });
-
-        channel.listen('.webrtc.answer', (event) => {
-            if (event.from === parseInt(receiverId)) {
-                handleIncomingAnswer(event.answer);
-            }
-        });
-
-        channel.listen('.webrtc.ice-candidate', (event) => {
-            if (event.from === parseInt(receiverId)) {
-                handleIncomingIceCandidate(event.candidate);
-            }
-        });
-
-        return () => {
-            channel.stopListening('.audio.message.sent');
-            channel.stopListening('.webrtc.offer');
-            channel.stopListening('.webrtc.answer');
-            channel.stopListening('.webrtc.ice-candidate');
-        };
-    }, [user?.id, receiverId, dispatch]);
-
-    const cleanup = () => {
-        isMountedRef.current = false;
-        if (timerRef.current) clearInterval(timerRef.current);
-        if (peerConnectionRef.current) peerConnectionRef.current.close();
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
-        }
-        if (audioURL) {
-            URL.revokeObjectURL(audioURL);
-        }
-    };
-
+   
+    
     const startTimer = () => {
         if (timerRef.current)
             clearInterval(timerRef.current);
@@ -316,7 +116,7 @@ const AudioMessage = ({ receiverId, compact = false, onSendComplete, onRecording
 
             {!isRecording && !audioURL && (
                 <button
-                    onClick={startRecording}
+                   
                     disabled={loading}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
                     title="Записать голосовое сообщение"

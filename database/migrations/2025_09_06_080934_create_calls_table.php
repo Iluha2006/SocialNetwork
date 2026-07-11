@@ -19,8 +19,19 @@ return new class extends Migration
             $table->text('ice_candidates')->nullable(); // ICE candidates
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
-            $table->integer('duration')->nullable(); // в секундах
+            $table->integer('duration')->nullable(); 
             $table->timestamps();
+
+              $table->index(['caller_id', 'receiver_id']);
+            
+           
+            $table->index('status');
+            
+           
+            $table->index('created_at');
+            
+           
+            $table->index(['status', 'created_at']);
         });
     }
 

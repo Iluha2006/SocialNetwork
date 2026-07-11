@@ -74,10 +74,7 @@ const {
             formData.append('user_id', user.id);
 
             const response = await axios.post('/api/chat-background', formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+               withCredentials:true,
             });
 
             if (response.data.success) {

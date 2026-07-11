@@ -24,7 +24,8 @@ const AudioMessageItem = ({ otherUserId }) => {
 
     // Функция для форматирования времени
     const formatTime = (dateString) => {
-        const date = new Date(dateString);
+        const s = typeof dateString === 'string' ? dateString : String(dateString);
+        const date = new Date(s && !s.endsWith('Z') && !s.includes('+') ? s + 'Z' : s);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
 
