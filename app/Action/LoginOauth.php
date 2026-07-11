@@ -30,7 +30,7 @@ class LoginOauth
 
         if (!$user) {
             $user = User::create([
-                'name' => $name ?? 'User',
+                'name' => $name ,
                 'email' => $email,
                 'password' => bcrypt(Str::random(16)),
                 'email_verified_at' => now(),
@@ -38,7 +38,7 @@ class LoginOauth
             Profile::create([
                 'user_id' => $user->id,
                 'email' => $email,
-                'name' => $name ?? 'User',
+                'name' => $name,
             ]);
         }
 
