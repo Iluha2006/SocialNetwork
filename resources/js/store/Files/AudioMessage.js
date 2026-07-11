@@ -174,67 +174,7 @@ export const deleteAudioMessage = (messageId, sender_id, receiver_id) => async (
         dispatch(setLoading(false));
     }
 };
-export const sendOffer = (offer, receiverId, userId) => async (getState) => {
-    try {
 
-     const response = await axios.post('/webrtc/offer', {
-            receiver_id: parseInt(receiverId),
-            offer: offer,
-            sender_id: userId
-        }, {
-            headers: {   'Accept': 'application/json',
-                'Content-Type': 'application/json' }
-        });
-
-
-        return response.data;
-    }
-    catch (error) {
-        console.error('Error sending offer:', error);
-        throw new Error('Ошибка отправки предложения звонка');
-    }
-};
-
-export const sendAnswer = (answer, receiverId, userId) => async (getState) => {
-    try {
-        const token = getState().user.token;
-
-        const response = await axios.post('/webrtc/answer', {
-            receiver_id: parseInt(receiverId),
-            answer: answer,
-            sender_id: userId
-        }, {
-            headers: {   'Accept': 'application/json',
-                'Content-Type': 'application/json' }
-        });
-
-        console.log('Answer sent successfully');
-
-        return response.data;
-    } catch (error) {
-        console.error('Error sending answer:', error);
-        throw new Error('Ошибка отправки ответа на звонок');
-    }
-};
-
-export const sendIceCandidate = (candidate, receiverId, userId) => async (getState) => {
-    try {
-        const token = getState().user.token;
-        const response = await axios.post('/webrtc/ice-candidate', {
-            receiver_id: parseInt(receiverId),
-            candidate: candidate,
-            sender_id: userId
-        }, {
-            headers: {   'Accept': 'application/json',
-                'Content-Type': 'application/json' }
-        });
-
-
-        return response.data;
-    } catch (error) {
-        console.error('Error sending ICE candidate:', error);
-    }
-};
 const AudioPersistConfig = {
     key: 'audio',
     storage,

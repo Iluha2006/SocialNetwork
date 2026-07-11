@@ -1,7 +1,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { messagesApi} from '../../api/modules/messages'
+import { conversationsApi } from '../../api/modules/conversations';
 import { getEcho } from '../../echo';
 
 const useMessageSocket = (otherUserId = null) => {
@@ -16,20 +16,19 @@ const useMessageSocket = (otherUserId = null) => {
         const channelName = `chat.${ids.join('.')}`;
         const channel = echo.private(channelName);
 
-
         channel.listen('.private-message', (event) => {
+            if (event.sender_id === user.id) return;
+
             const isRelevant =
-                (event.message.sender_id === parseInt(otherUserId) && event.message.receiver_id === user.id) ||
-                (event.message.receiver_id === parseInt(otherUserId) && event.message.sender_id === user.id);
+                (event.sender_id === parseInt(otherUserId) && event.receiver_id === user.id) ||
+                (event.receiver_id === parseInt(otherUserId) && event.sender_id === user.id);
 
             if (isRelevant) {
-
                 dispatch(
-                    messagesApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
-
-                        if (!draft.some(m => m.id === event.message.id)) {
-                            draft.push({
-                                ...event.message,
+                    conversationsApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
+                        if (!draft.messages.some(m => m.id === event.id)) {
+                            draft.messages.push({
+                                ...event,
                                 is_optimistic: false,
                                 status: 'sent'
                             });
@@ -39,20 +38,20 @@ const useMessageSocket = (otherUserId = null) => {
             }
         });
 
-
         channel.listen('.message-deleted', (event) => {
+            const deletedId = event.message_id ?? event.id;
+            if (!deletedId) return;
             dispatch(
-                messagesApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
-                    return draft.filter(m => m.id !== event.message_id);
+                conversationsApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
+                    draft.messages = draft.messages.filter(m => m.id !== deletedId);
                 })
             );
         });
 
-
         channel.listen('.message-edited', (event) => {
             dispatch(
-                messagesApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
-                    const msg = draft.find(m => m.id === event.message_id);
+                conversationsApi.util.updateQueryData('loadConversationMessages', otherUserId, (draft) => {
+                    const msg = draft.messages.find(m => m.id === event.message_id);
                     if (msg) {
                         msg.content = event.new_content;
                         msg.edited = true;

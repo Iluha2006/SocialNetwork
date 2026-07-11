@@ -26,16 +26,16 @@ const useMessageDeletion = (userId) => {
                     dispatch(getConversationAudio(parseInt(userId)));
                 }
             } else {
-               result = await deleteMessageMutation(messageId);
+               result = await deleteMessage({ messageId, receiverId });
             }
 
-            if (result?.success) {
+            if (result?.data?.success) {
                 setShowSuccessNotification(true);
                 setTimeout(() => setShowSuccessNotification(false), 3000);
                 return { success: true };
             } else {
-                setDeleteError(result?.error || 'Ошибка при удалении сообщения');
-                return { success: false, error: result?.error };
+                setDeleteError(result?.data?.error || result?.error?.data?.message || 'Ошибка при удалении сообщения');
+                return { success: false, error: result?.data?.error };
             }
         } catch (error) {
             setDeleteError('Неизвестная ошибка при удалении');

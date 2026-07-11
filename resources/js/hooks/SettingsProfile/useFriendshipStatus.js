@@ -16,14 +16,14 @@ export const useFriendshipStatus = (profile, currentUser) => {
 
 
     const calculateStatusFromRequests = useCallback(() => {
-        if (!profile?.user_id || !outgoingRequests) return null;
+        if (!profile?.id || !outgoingRequests) return null;
 
         const outgoingRequest = outgoingRequests.find(r =>
-            r.receiver_id === profile.user_id && r.status === 'pending'
+            r.receiver?.user_id === profile.id && r.status === 'pending'
         );
 
         return outgoingRequest ? 'request_sent' : null;
-    }, [profile?.user_id, outgoingRequests]);
+    }, [profile?.id, outgoingRequests]);
 
 
     const checkStatus = useCallback(async () => {
@@ -38,7 +38,7 @@ export const useFriendshipStatus = (profile, currentUser) => {
         setIsLoading(true);
         try {
             const result = await dispatch(
-                checkAndSetFriendshipStatus(currentUser.id, profile.user_id)
+                checkAndSetFriendshipStatus(currentUser.id, profile.id)
             );
             if (result.success) {
                 setFriendshipStatus(result.status);
@@ -62,7 +62,7 @@ export const useFriendshipStatus = (profile, currentUser) => {
         try {
             const result = await dispatch(sendFriendRequest({
                 sender_id: currentUser.id,
-                receiver_id: profile.user_id
+                receiver_id: profile.id
             }));
 
             if (result.success) {

@@ -145,7 +145,9 @@ export const sendFriendRequest = (requestData) => async (dispatch, getState) => 
             withCredentials: true
         });
 
-        dispatch(addOutgoingRequest(response.data));
+        if (response.data.request) {
+            dispatch(addOutgoingRequest(response.data.request));
+        }
         dispatch(fetchFriendRequests(requestData.sender_id));
 
         return { success: true, data: response.data };
@@ -181,6 +183,10 @@ export const acceptFriendRequest = (requestId) => async (dispatch,getState) => {
             withCredentials: true
         });
         dispatch(removeRequest(requestId));
+        const userId = getState().user.user?.id;
+        if (userId) {
+            dispatch(fetchFriends(userId));
+        }
         return { success: true };
     } catch (error) {
         const errorMsg = error.response?.data?.error || 'Ошибка принятия заявки';
@@ -222,6 +228,27 @@ export const deleteFriend = (userId, friendId) => async (dispatch,getState) => {
 };
 
 
+
+export const cancelFriendRequest = (requestId) => async (dispatch, getState) => {
+    try {
+        dispatch(setFriendsLoading(true));
+        await axios.post(`/friend/cancel/${requestId}`, {}, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            withCredentials: true
+        });
+        dispatch(removeRequest(requestId));
+        return { success: true };
+    } catch (error) {
+        const errorMsg = error.response?.data?.error || 'Ошибка отмены заявки';
+        dispatch(setFriendsError(errorMsg));
+        return { success: false, error: errorMsg };
+    } finally {
+        dispatch(setFriendsLoading(false));
+    }
+};
 
 export const checkAndSetFriendshipStatus = (profileId, otherProfileId) => async (dispatch, getState) => {
     try {

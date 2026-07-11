@@ -17,7 +17,7 @@ export const useMessageSender = (receiverId, onSuccess) => {
         try {
 
             const result = await sendMessageMutation({
-                receiverId: parseInt(receiverId),
+                receiverId,
                 content: content?.trim() || '',
                 image,
                 file,

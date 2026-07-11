@@ -10,10 +10,15 @@ const ChatHeader = ({
     onProfileClick,
 }) => {
     return (
-        <div className="flex items-center p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl gap-3 text-amber-50 bg-white/5 backdrop-blur-sm">
+        <div className="flex items-center p-4 border-b rounded-t-2xl gap-3"
+            style={{
+                background: 'var(--chat-header-gradient, linear-gradient(135deg, #007bff 0%, #0056b3 100%))',
+                borderColor: 'var(--chat-border, rgba(255,255,255,0.1))'
+            }}
+        >
 
-            <Modal otherUserId={recipient?.id} />
             <CallButton userId={recipient?.id} userName={recipient?.name} />
+            <Modal otherUserId={recipient?.id} />
 
 
             {recipient && (
@@ -25,11 +30,12 @@ const ChatHeader = ({
                 >
                     <div className="relative">
                         <img
-                            src={recipient.avatar || 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13'}
+                            src={recipient.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
                             alt={recipient.name}
                             className="w-10 h-10 rounded-full object-cover ring-2 ring-white/20"
                             onError={(e) => {
-                                e.target.src = 'https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13';
+                                if (e.target.src === 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E') return;
+                                e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E';
                             }}
                         />
 

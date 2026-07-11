@@ -100,13 +100,13 @@ export const {
 } = chatSlice.actions;
 
 
-//const chatPersistConfig = {
- //   key: 'chat',
-  //  storage,
-  //  stateReconciler: autoMergeLevel2,
-  //  whitelist: ['conversations'],
- //   blacklist: ['loading', 'error', 'chats'],
-//};
+const chatPersistConfig = {
+    key: 'chat',
+    storage,
+    stateReconciler: autoMergeLevel2,
+    whitelist: ['conversations'],
+    blacklist: ['loading', 'error', 'chats'],
+};
 
-//export const persistedChatReducer = persistReducer(chatPersistConfig, chatSlice.reducer);
-export default chatSlice.reducer;
+export const persistedChatReducer = persistReducer(chatPersistConfig, chatSlice.reducer);
+export default persistedChatReducer;

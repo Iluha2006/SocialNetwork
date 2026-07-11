@@ -67,10 +67,10 @@ export const loadBackground = (userId, token) => async (dispatch) => {
                 'Content-Type': 'application/json' }
         });
 
-        if (response.data.success && response.data.path_image) {
+        if (response.data.success && response.data.background) {
             dispatch(setBackgroundImage({
                 userId,
-                imageUrl: response.data.path_image
+                imageUrl: response.data.background
             }));
         }
 
@@ -94,8 +94,7 @@ export const uploadBackground = (file, userId, token) => async (dispatch) => {
 
         const response = await axios.post('/chat-background', formData, {
             headers: {
-             'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Accept': 'application/json',
             },
         });
 

@@ -1,169 +1,102 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-    useGetProfileQuery,
-    useUpdateProfileMutation
-} from '../../api/modules/profileApi';
+import { useGetProfileQuery, useUpdateProfileMutation } from '../../api/modules/profileApi';
 import { setProfile } from '../../store/settings/Profile';
+import { validateProfile } from '../../utils/validators/profile';
 
 export const useProfileForm = () => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
+  const userId = useSelector(state => state.user?.user?.id);
+
+  const { data: profileData, isLoading: isQueryLoading, refetch } = useGetProfileQuery(userId, {
+    skip: !userId,
+  });
+
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ name: '', bio: '' });
+  const [errors, setErrors] = useState({});
+  const [feedback, setFeedback] = useState({ status: 'idle', message: '' });
+
+  const profile = profileData?.profile;
 
 
-    const user = useSelector(state => state.user?.user);
-    const profileFromSlice = useSelector(state => state.profile?.profile);
+  useEffect(() => {
+    if (profile && !isEditing) {
+      setFormData({
+        name: profile.name || '',
+        bio: profile.bio || ''
+      });
+    }
+  }, [profile, isEditing]);
 
-    const {
-        data: profileData,
-        isLoading: isQueryLoading,
-        isError: isQueryError,
-        error: queryError,
-        refetch
-    } = useGetProfileQuery(user?.id, {
-        skip: !user?.id,
-        refetchOnMountOrArgChange: true,
-    });
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+   
+    if (errors[name]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  }, [errors]);
 
-    const [updateProfileMutation, {
-        isLoading: isUpdating,
-        isError: isUpdateError,
-        error: updateError
-    }] = useUpdateProfileMutation();
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        bio: ''
-    });
-    const [localError, setLocalError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!userId) return;
 
-    const profile = profileData || profileFromSlice;
-    const isLoading = isQueryLoading;
-
-
-    useEffect(() => {
-        if (profile) {
-            setFormData({
-                name: profile.name || '',
-                bio: profile.bio || ''
-            });
-        }
-    }, [profile]);
-
-    useEffect(() => {
-        if (isQueryError) {
-            setLocalError(queryError?.data?.message || 'Ошибка загрузки профиля');
-        }
-    }, [isQueryError, queryError]);
-
-    useEffect(() => {
-        if (isUpdateError) {
-            setLocalError(updateError?.data?.message || 'Ошибка при сохранении');
-        }
-    }, [isUpdateError, updateError]);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        clearMessages();
+    const trimmed = {
+      name: formData.name.trim(),
+      bio: formData.bio.trim()
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        clearMessages();
+    const validationErrors = validateProfile(trimmed);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setFeedback({ status: 'error', message: 'Проверьте правильность заполнения полей' });
+      return;
+    }
 
-        if (!formData.name.trim()) {
-            setLocalError('Имя обязательно для заполнения');
-            return;
-        }
+    try {
+      const result = await updateProfile({ userId, ...trimmed }).unwrap();
+      dispatch(setProfile(result));
+      setFeedback({ status: 'success', message: 'Профиль успешно обновлен' });
+      setIsEditing(false);
+    } catch (err) {
+      setFeedback({ 
+        status: 'error', 
+        message: err?.data?.message || 'Ошибка сервера. Попробуйте позже' 
+      });
+    }
+  }, [userId, formData, updateProfile, dispatch]);
 
-        if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-            setLocalError('Введите корректный email адрес');
-            return;
-        }
+  const handleCancel = useCallback(() => {
+    setFormData({ name: profile?.name || '', bio: profile?.bio || '' });
+    setIsEditing(false);
+    setErrors({});
+    setFeedback({ status: 'idle', message: '' });
+  }, [profile]);
 
-        try {
-            const updateData = {
-                userId: user?.id,
-                name: formData.name.trim(),
-                bio: formData.bio.trim()
-            };
+  const handleEdit = useCallback(() => {
+    setIsEditing(true);
+    setErrors({});
+    setFeedback({ status: 'idle', message: '' });
+  }, []);
 
-            const result = await updateProfileMutation(updateData).unwrap();
-
-            setSuccessMessage('Профиль успешно обновлен');
-            setIsEditing(false);
-
-            if (result) {
-                dispatch(setProfile(result));
-            }
-
-            return { success: true, data: result };
-
-        } catch (error) {
-            console.error('Update error:', error);
-            const errorMessage = error?.data?.message || 'Произошла ошибка при сохранении, попробуйте позже';
-            setLocalError(errorMessage);
-            return { success: false, error: errorMessage };
-        }
-    };
-
-    const handleCancel = () => {
-        setFormData({
-            name: profile?.name || '',
-
-            bio: profile?.bio || ''
-        });
-        setIsEditing(false);
-        clearMessages();
-    };
-
-    const handleEdit = () => {
-        setIsEditing(true);
-        clearMessages();
-    };
-
-    const clearMessages = () => {
-        setLocalError('');
-        setSuccessMessage('');
-    };
-
-    const refetchProfile = () => {
-        if (user?.id) {
-            refetch();
-        }
-    };
-
-    return {
-
-        profile,
-        formData,
-        isEditing,
-        isLoading,
-        isUpdating,
-        localError,
-        successMessage,
-        user,
-
-
-        isQueryError,
-        isUpdateError,
-
-
-        handleInputChange,
-        handleSubmit,
-        handleCancel,
-        handleEdit,
-        refetchProfile,
-        clearMessages,
-
-        setIsEditing,
-        setFormData,
-        setLocalError,
-        setSuccessMessage,
-    };
+  return {
+    profile,
+    formData,
+    errors,
+    feedback,
+    isEditing,
+    isLoading: isQueryLoading || isUpdating,
+    handleInputChange,
+    handleSubmit,
+    handleCancel,
+    handleEdit,
+    refetch,
+  };
 };

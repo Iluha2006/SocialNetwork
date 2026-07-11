@@ -68,6 +68,7 @@ export const initiateCall = (callData) => async (dispatch, getState) => {
 
 
         dispatch(setCurrentCall(response.data));
+        dispatch(setCallStatus('ringing'));
 
         return {
             success: true,

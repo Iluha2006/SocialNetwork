@@ -1,6 +1,4 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { handleIceCandidate } from '../../WebRTC/IceCandidateAction';
 
 export const usePeerConnection = () => {
     const peerConnectionRef = useRef(null);
@@ -26,11 +24,9 @@ export const usePeerConnection = () => {
             remoteStreamRef.current = event.streams[0];
         };
 
-        pc.onicecandidate = (event) =>
-        {
+        pc.onicecandidate = (event) => {
             if (event.candidate) {
-             console.log('New ICE candidate:', event.candidate);
-             handleIceCandidate(event.candidate);
+                console.log('New ICE candidate:', event.candidate);
             }
         };
 
