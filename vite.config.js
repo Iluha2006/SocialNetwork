@@ -2,41 +2,47 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import dns from 'node:dns';
-
+import laravel from 'laravel-vite-plugin'; 
 
 dns.setDefaultResultOrder('verbatim');
+
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://nginx'; 
 
 export default defineConfig({
   plugins: [
     react(),
+    laravel({
+      input: ['resources/css/app.css', 'resources/js/app.jsx'],
+      refresh: true,
+    }),
     tailwindcss(),
   ],
   server: {
-    host: 'localhost',
+    host: '0.0.0.0', 
     port: 5173,
     hmr: {
-      host: 'localhost',
+      host: process.env.VITE_HMR_HOST || 'localhost',
       clientPort: 5173,
-      strictPort: true
+      protocol: 'ws',
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
       },
       '/auth': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
       },
       '/broadcasting': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
       },
       '/sanctum': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
       },
