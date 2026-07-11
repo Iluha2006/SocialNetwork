@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import {  removeConversation } from '../../store/ChatMessengers/chatSlice';
+import { removeConversation } from '../../store/ChatMessengers/chatSlice';
 import { baseQueryWithCsrf } from '../configAuth';
 
 export const chatsApi = createApi({
@@ -24,17 +24,26 @@ export const chatsApi = createApi({
                 url: `/messages/chat/${otherUserId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, otherUserId ) => result? [{ type: 'Chats', id: otherUserId }]: [{ type:'Chats',id:'LIST'}],
-            async onQueryStarted(otherUserId, { dispatch, getState }) {
-                try {
-                    const state = getState();
-                    const currentUserId = state.user?.user?.id;
-                    const conversationKey = [currentUserId, otherUserId].sort().join('-');
+            invalidatesTags: (result, otherUserId) =>
+                result ? [{ type: 'Chats', id: otherUserId }] : [{ type: 'Chats', id: 'LIST' }],
+            async onQueryStarted(otherUserId, { dispatch, getState, queryFulfilled }) {
+                const state = getState();
+                const currentUserId = state.user?.user?.id;
+                const conversationKey = [currentUserId, otherUserId].sort().join('-');
 
+                dispatch(removeConversation(conversationKey));
+
+                const patchResult = dispatch(
+                    chatsApi.util.updateQueryData('fetchChatList', undefined, (draft) => {
+                        const idx = draft.findIndex(chat => chat.id === otherUserId);
+                        if (idx !== -1) draft.splice(idx, 1);
+                    })
+                );
+
+                try {
                     await queryFulfilled;
-                    dispatch(removeConversation(conversationKey));
-                } catch (err) {
-                    console.error('Failed to delete chat:', err);
+                } catch {
+                    patchResult.undo();
                 }
             },
         }),

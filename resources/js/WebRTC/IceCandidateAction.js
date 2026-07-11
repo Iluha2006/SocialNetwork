@@ -1,10 +1,9 @@
-export const handleIceCandidate = async (peerConnection, candidate) => {
+export const addRemoteIceCandidate = async (peerConnection, candidate) => {
     try {
-        if (!candidate) return;
+        if (!candidate || !peerConnection) return;
         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        return { success: true };
+        return true;
     } catch (error) {
-        console.error('Error adding ICE candidate:', error);
-        throw error;
+        console.error('Error adding remote ICE candidate:', error);
     }
 };

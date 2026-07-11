@@ -6,7 +6,7 @@ function getCookie(name) {
 }
 
 export const baseQueryWithCsrf = fetchBaseQuery({
-  baseUrl: 'http://127.0.0.1:8000',
+  baseUrl: '',
   credentials: 'include',
   prepareHeaders: (headers) => {
     headers.set('Accept', 'application/json');

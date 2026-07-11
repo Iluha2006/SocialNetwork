@@ -1,17 +1,22 @@
 
-export const createOffer = async (peerConnectionRef, receiverId, userId, audioStream) => {
+export const createOffer = async (peerConnectionRef, audioStream) => {
     try {
+        const pc = peerConnectionRef.current;
+
+        if (!pc) {
+            throw new Error('Peer connection is not initialized');
+        }
+
         if (audioStream) {
             audioStream.getTracks().forEach(track => {
-                peerConnectionRef.current.addTrack(track, audioStream);
+                pc.addTrack(track, audioStream);
             });
         }
 
-        const offer = await peerConnectionRef.current.createOffer();
-        await peerConnectionRef.current.setLocalDescription(offer);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
 
-
-        return { success: true, offer };
+        return { type: pc.localDescription.type, sdp: pc.localDescription.sdp };
     } catch (error) {
         console.error('Error creating offer for audio transfer:', error);
         throw error;

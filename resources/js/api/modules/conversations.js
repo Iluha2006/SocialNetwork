@@ -6,7 +6,7 @@ import { baseQueryWithCsrf } from  '../configAuth';;
 export const conversationsApi = createApi({
     reducerPath: 'conversationsApi',
     baseQuery: baseQueryWithCsrf,
-    tagTypes: ['Conversation', 'Messages'],
+    tagTypes: ['Conversation'],
 
     endpoints: (build) => ({
         loadConversationMessages: build.query({
@@ -15,19 +15,19 @@ export const conversationsApi = createApi({
 
             providesTags: (result, error, otherUserId) => [
                 { type: 'Conversation', id: otherUserId },
-                { type: 'Messages', id: 'LIST' }
+                { type: 'Conversation', id: 'LIST' }
             ],
 
-            async onQueryStarted({ otherUserId, currentUserId }, { dispatch, queryFulfilled }) {
+            async onQueryStarted(otherUserId, { dispatch, queryFulfilled, getState }) {
                 try {
                     const { data } = await queryFulfilled;
+                    const currentUserId = getState().user?.user?.id;
 
-                    if (Array.isArray(data)) {
-                        const conversationKey = [currentUserId, otherUserId].sort().join('-');
+                    if (Array.isArray(data) && currentUserId) {
+                        const conversationKey = [currentUserId, Number(otherUserId)].sort().join('-');
                         dispatch(loadMessages({ conversationKey, messages: data }));
                         const { getEcho } = await import('../../echo');
                         getEcho();
-
                     }
                 } catch (err) {
                     console.error('Failed to load conversation:', err);

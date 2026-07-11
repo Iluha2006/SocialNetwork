@@ -7,6 +7,15 @@ const AttachmentPreview = ({ image, file, onRemoveImage, onRemoveFile }) => {
     return (
         <div className="absolute -top-20 left-0 right-0 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mx-3 animate-in slide-in-from-bottom-2">
             <div className="flex items-center justify-between">
+
+                 <button
+                                    type="button"
+                                    onClick={onRemoveImage}
+                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-sm"
+                                    aria-label="Удалить изображение"
+                                >
+                                    ×
+                                </button>
                 <div className="flex items-center gap-3">
                     {image && (
                         <div className="flex items-center gap-2">
@@ -16,14 +25,7 @@ const AttachmentPreview = ({ image, file, onRemoveImage, onRemoveFile }) => {
                                     alt="Предпросмотр"
                                     className="w-full h-full object-cover"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={onRemoveImage}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-sm"
-                                    aria-label="Удалить изображение"
-                                >
-                                    ×
-                                </button>
+                               
                             </div>
                             <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
                                 {image.name}

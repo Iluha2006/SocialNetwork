@@ -19,7 +19,7 @@ function FriendButton  ({
     };
 
     const getButtonStyle = () => {
-        const base = 'px-5 py-2.5 border-none rounded-lg text-sm font-medium cursor-pointer transition-all min-w-40';
+        const base = 'px-5 py-2.5 border-none rounded-lg text-sm font-medium cursor-pointer transition-all w-full md:w-auto';
 
         if (disabled || isLoading) {
             return `${base} opacity-60 cursor-not-allowed bg-gray-400 text-white`;

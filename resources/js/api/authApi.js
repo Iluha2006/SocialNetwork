@@ -3,6 +3,8 @@ import { baseQueryWithCsrf } from './configAuth';
 import { setAuthData, clearAuth, setLoading, setError } from '../store/Auth/UserStore';
 
 import { profileApi } from '../api/modules/profileApi';
+import { clearUserLikes } from '../utils/storage/likeStorage';
+import {  clearUserLiked } from '../store/PostUser/likesSlice';
 
 export const authApi = createApi({
     reducerPath: 'authApi',
@@ -37,19 +39,15 @@ export const authApi = createApi({
                             }
                         }));
 
-                      dispatch(
-                            profileApi.util.upsertQueryData(
-                                'getProfile',
-                                user.id,
-                                { data: user }
-                            )
-                        );
+                 dispatch(
+    profileApi.util.upsertQueryData('getProfile', user.id, { profile: user })
+);
 
 
                         dispatch(
                             profileApi.endpoints.getProfile.initiate(user.id, {
                                 forceRefetch: true,
-                                subscribe: false
+                      
                             })
                         );
 
@@ -74,6 +72,7 @@ export const authApi = createApi({
             async onQueryStarted(_, { dispatch, queryFulfilled }) {
                 dispatch(setLoading(true));
                 dispatch(setError(null));
+           
                 try {
                     const { data } = await queryFulfilled;
                     console.log('Register response:', data);
@@ -82,20 +81,11 @@ export const authApi = createApi({
 
                     if (user) {
                         dispatch(setAuthData({ user }));
-
-                      dispatch(
-                            profileApi.util.upsertQueryData(
-                                'getProfile',
-                                user.id,
-                                { data: user }
-                            )
-                        );
-                        dispatch(
-                            profileApi.endpoints.getProfile.initiate(user.id, {
-                                forceRefetch: true,
-                                subscribe: false
-                            })
-                        );
+             
+             
+             dispatch(
+    profileApi.util.upsertQueryData('getProfile', user.id, { profile: user })
+);
                         const { getEcho } = await import('../echo');
                         getEcho();
 
@@ -126,18 +116,29 @@ export const authApi = createApi({
             ],
         }),
 
-        logout: build.mutation({
+        logout:   build.mutation({
+            
+          
+          
             query: () => ({
                 url: '/auth/logout',
                 method: 'POST',
             }),
 
-            async onQueryStarted(_, { dispatch, queryFulfilled }) {
+            async onQueryStarted(_, { dispatch, queryFulfilled ,getState}) {
                 try {
 
                     await queryFulfilled;
 
-
+                   
+                   const userId = getState()?.user?.user?.id;
+            if (userId) {
+                dispatch(clearUserLiked(String(userId)));
+            }
+    
+     
+                     
+                   
                     try {
                         const echoModule = await import('../echo');
 
@@ -166,7 +167,6 @@ export const authApi = createApi({
 export const {
     useLoginMutation,
     useRegisterMutation,
-
     useResendVerificationMutation,
     useLogoutMutation,
 } = authApi;

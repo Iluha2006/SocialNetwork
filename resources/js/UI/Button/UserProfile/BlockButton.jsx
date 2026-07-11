@@ -13,7 +13,7 @@ function BlockButton  ({
             disabled={disabled}
             className={`
                 px-5 py-2.5 border-none rounded-lg text-sm font-medium
-                cursor-pointer transition-all min-w-40
+                cursor-pointer transition-all w-full md:w-auto
                 disabled:opacity-60 disabled:cursor-not-allowed
                 ${isBlocked
                     ? 'bg-red-500 hover:bg-red-600 text-white'

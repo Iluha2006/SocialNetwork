@@ -20,10 +20,13 @@ export default function ModalProfile({
     isLoading: isProfileLoading
   } = useGetProfileQuery(authUser?.id, {
     skip: !authUser?.id,
+      refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true,
   });
 
 
-  const profileData = profileResponse?.data || profileResponse;
+  const profileData = profileResponse?.profile;
 
 
   const getAvatar = () => {
@@ -31,9 +34,7 @@ export default function ModalProfile({
     if (profileData?.avatar) {
       return profileData.avatar;
     }
-    if (profileData?.user?.avatar) {
-      return profileData.user.avatar;
-    }
+   
     if (oauthUser?.avatar) {
       return oauthUser.avatar;
     }
@@ -45,15 +46,11 @@ export default function ModalProfile({
     if (profileData?.name) {
       return profileData.name;
     }
-    if (profileData?.user?.name) {
-      return profileData.user.name;
-    }
+    
     if (oauthUser?.name) {
       return oauthUser.name;
     }
-    if (authUser?.name) {
-      return authUser.name;
-    }
+    
     return 'Пользователь';
   };
 
@@ -104,7 +101,7 @@ export default function ModalProfile({
           ) : (
             <div className="w-12 h-12 rounded-full mr-3">
               <img
-                src="https://avatars.mds.yandex.net/i?id=1fec8837c92eca6c1175ac4c8e6d56383e5d7956-5603780-images-thumbs&n=13"
+                src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E"
                 alt="Аватар по умолчанию"
                 className="w-full h-full rounded-full object-cover"
               />
@@ -112,12 +109,26 @@ export default function ModalProfile({
           )}
           <div className="flex flex-col">
             <span className="font-semibold text-base text-amber-50 mb-1">
-              {isProfileLoading ? 'Загрузка...' : userName}
+              {userName}
             </span>
           </div>
         </div>
 
         <div className="py-2">
+          <button
+            className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-amber-50 text-sm hover:bg-gray-800"
+            onClick={() => {
+              onNavigate?.('/home');
+              onClose();
+            }}
+            disabled={isLogout}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="mr-3 text-gray-400">
+              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+            </svg>
+            <span className="text-amber-50">Профиль</span>
+          </button>
+
           <button
             className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-amber-50 text-sm hover:bg-gray-800"
             onClick={() => {
@@ -132,8 +143,7 @@ export default function ModalProfile({
             <span className="text-amber-50">Настройки</span>
           </button>
 
-          <ThemeToggle />
-
+    
           <button
             className="flex items-center w-full px-5 py-3 bg-transparent border-none cursor-pointer transition-colors text-red-400 text-sm hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onLogout}

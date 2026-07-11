@@ -21,7 +21,7 @@ function MessageButton ({ recipientId, recipientName, disabled = false, classNam
                 border-none rounded-lg
                 text-sm font-medium
                 cursor-pointer transition-all
-                min-w-40 hover:bg-gray-300
+                w-full md:w-auto hover:bg-gray-300
                 disabled:opacity-50 disabled:cursor-not-allowed
                 ${className}
             `}
