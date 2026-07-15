@@ -40,7 +40,6 @@ Full-stack social network with real-time messaging, audio/video calls, posts, fr
 ### Messaging
 - Text messages with real-time delivery (WebSocket)
 - File and image attachments in chat
-- Audio messages (record, send, play)
 - Chat background themes
 - Chat history management (update, delete messages, clear chat)
 
