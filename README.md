@@ -48,8 +48,8 @@ Full-stack social network with real-time messaging, audio/video calls, posts, fr
 - Friends list
 - Friendship status check
 
-### Audio/Video Calls
-- WebRTC peer-to-peer calls (audio and video)
+### Audio звонки
+- WebRTC peer-to-peer calls (audio )
 - ICE candidate exchange via WebSocket
 - Call states: initiate, accept, reject, end
 - Call history
