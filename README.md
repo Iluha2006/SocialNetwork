@@ -157,15 +157,7 @@ docker compose up -d
 | Prometheus | http://localhost:9091 |
 | Reverb WebSocket | http://localhost:6001 |
 
-### Default Credentials
 
-| Service | Login | Password |
-|---------|-------|----------|
-| Database | postgres | 23paer2007 |
-| MinIO | minio124 | minio1235 |
-| Grafana | admin | admin |
-
-## Domain Model
 
 ### Entities
 
