@@ -25,7 +25,7 @@ const persistConfig = {
     key: 'root',
     storage,
     stateReconciler: autoMergeLevel2,
-    whitelist: ['user','profile','oauth','chat'],
+    whitelist: ['user','profile','oauth','chat','chatTheme'],
     blacklist: ['calls', 'online', 'search', ],
 };
 

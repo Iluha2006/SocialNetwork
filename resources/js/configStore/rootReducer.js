@@ -27,6 +27,7 @@ import profileApi from '../api/modules/profileApi';
 import postsApi from '../api/modules/postApi';
 import commentsApi from '../api/modules/commentsApi';
 import themeSlice from '../store/Theme/themeSlice'
+import chatThemeSlice from '../store/Theme/chatThemeSlice'
 import oauthSlice from '../store/Auth/Oauth'
 
 import { likePostApi } from '../api/modules/likePost';
@@ -53,6 +54,7 @@ const rootReducer = combineReducers({
     audio: persistedAudioReducer,
     [oauthApi.reducerPath]: oauthApi.reducer,
     theme: themeSlice,
+    chatTheme: chatThemeSlice,
     [authApi.reducerPath]: authApi.reducer,
       [postsApi.reducerPath]: postsApi.reducer,
         [commentsApi.reducerPath]: commentsApi.reducer,
