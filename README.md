@@ -382,6 +382,4 @@ open http://localhost:8088/horizon
 open http://localhost:3000
 ```
 
-## License
 
-MIT
