@@ -1,5 +1,5 @@
 services:
-  # 🔹 PHP-FPM (для работы с Nginx)
+
   php:
     build:
       context: .
@@ -17,8 +17,6 @@ services:
       - REDIS_PORT=6379
       - REDIS_CLIENT=phpredis
       - REVERB_HOST=reverb
-      - REVERB_PORT=6001
-      - REVERB_SCHEME=http
       - AWS_ACCESS_KEY_ID=minio124
       - AWS_SECRET_ACCESS_KEY=minio1235
       - AWS_DEFAULT_REGION=us-east-1
@@ -42,49 +40,14 @@ services:
       retries: 3
 
  
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: laravel_worker
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    command: php artisan queue:work --queue=broadcast,media,default --tries=3 --timeout=300 --sleep=3
-    environment:
-      - APP_ENV=local
-      - REDIS_HOST=redis
-      - REDIS_PASSWORD=
-      - REDIS_PORT=6379
-      - REDIS_CLIENT=phpredis
-      - REVERB_HOST=reverb
-      - REVERB_PORT=6001
-      - REVERB_SCHEME=http
-      - AWS_URL=http://localhost:9000
-      - AWS_ENDPOINT=http://storage:9000
-      - AWS_BUCKET=social-media
-      - AWS_ACCESS_KEY_ID=minio124
-      - AWS_SECRET_ACCESS_KEY=minio1235
-    depends_on:
-      php:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      storage:
-        condition: service_healthy
-    networks:
-      - app-network
-    restart: unless-stopped
-
-
   nginx:
     build:
       context: .
       dockerfile: Dockerfile.nginx
-    container_name: laravel_nginx  # 🔥 Простое имя без спецсимволов
+    container_name: laravel_nginx 
     ports:
-      - "8081:80"   # 🔥 Хост:8080 → Контейнер:80
-      - "8443:443"  # 🔥 HTTPS (опционально)
+      - "8077:443"
+      - "8088:80"
     volumes:
       - ./:/var/www/html
     depends_on:
@@ -108,11 +71,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  
+    
 
   redis:
     image: redis:7-alpine
@@ -132,10 +92,10 @@ services:
     environment:
       MINIO_ROOT_USER: minio124
       MINIO_ROOT_PASSWORD: minio1235
-      MINIO_BUCKET: social-media  # 🔥 Авто-создание бакета (MinIO 2023+)
+      MINIO_BUCKET: social-media  
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console UI
+      - "9000:9000"  
+      - "9001:9001"  
     volumes:
       - ministorage_data:/data
     networks:
@@ -159,10 +119,6 @@ services:
       - VITE_PROXY_TARGET=http://nginx
       - VITE_HOST=0.0.0.0
       - VITE_HMR_HOST=localhost
-      - VITE_REVERB_APP_KEY=wdqp1oq3yoyujpmnz8tw
-      - VITE_REVERB_HOST=localhost
-      - VITE_REVERB_PORT=6001
-      - VITE_REVERB_SCHEME=http
     depends_on:
       - nginx
     networks:
@@ -184,9 +140,6 @@ services:
       - REDIS_PASSWORD=
       - REDIS_PORT=6379
       - REDIS_CLIENT=phpredis
-      - REVERB_HOST=reverb
-      - REVERB_PORT=6001
-      - REVERB_SCHEME=http
       - AWS_ENDPOINT=http://storage:9000
       - AWS_BUCKET=social-media
       - AWS_ACCESS_KEY_ID=minio124
@@ -234,6 +187,63 @@ services:
       - app-network
     restart: unless-stopped
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: laravel_cloudflared
+    command: tunnel --url http://nginx:80 --no-autoupdate --protocol http2
+    depends_on:
+      - nginx
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: laravel_node_exporter
+    ports:
+      - "9102:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: laravel_prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: laravel_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
 networks:
   app-network:
     driver: bridge
@@ -241,3 +251,4 @@ networks:
 volumes:
   postgres_data:
   ministorage_data:
+  grafana_data:
