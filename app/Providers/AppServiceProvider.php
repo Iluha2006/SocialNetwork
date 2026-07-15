@@ -33,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
 
         URL::forceScheme('http');
 
+        $this->overrideCollectorRegistry();
+
         // Event::listen([
         //   IncomingCall::class,
         //   CallAccepted::class,
@@ -48,5 +50,20 @@ class AppServiceProvider extends ServiceProvider
         if (env('APP_ENV') === 'local' && str_contains(env('APP_URL'), 'https')) {
             URL::forceScheme('https');
         }
+    }
+
+    private function overrideCollectorRegistry(): void
+    {
+        $this->app->extend(\Prometheus\CollectorRegistry::class, function () {
+            $options = [
+                'host' => env('REDIS_HOST', '127.0.0.1'),
+                'port' => env('REDIS_PORT', 6379),
+            ];
+            if ($password = env('REDIS_PASSWORD')) {
+                $options['password'] = $password;
+            }
+            $adapter = new \Prometheus\Storage\Redis($options);
+            return new \Prometheus\CollectorRegistry($adapter, false);
+        });
     }
 }
