@@ -100,6 +100,53 @@
     background: rgba(255, 82, 82, 0.1);
 }
 
+.edit-message-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: none;
+    border: none;
+    color: var(--chat-secondary, #6c757d);
+}
+
+.edit-message-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--chat-primary, #007bff);
+}
+
+.message-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.message-edit-input {
+    width: 100%;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    line-height: 1.4;
+    backdrop-filter: blur(4px);
+}
+
+.message-edit-input:focus {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.message-edited-flag {
+    font-style: italic;
+}
+
 .delete-message-btn-compact {
     background: none;
     border: none;

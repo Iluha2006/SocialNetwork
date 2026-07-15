@@ -111,7 +111,7 @@ const Modal = ({ otherUserId }) => {
                     onClick={closeModal}
                 >
                     <div
-                        className="w-64 sm:w-72 bg-[rgba(1,14,24,0.96)] rounded-xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden animate-fadeIn"
+                        className={`bg-[rgba(1,14,24,0.96)] rounded-xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden animate-fadeIn transition-all duration-200 ${showThemes ? 'w-[340px] sm:w-[380px]' : 'w-64 sm:w-72'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {showDeleteConfirm ? (
@@ -171,14 +171,7 @@ const Modal = ({ otherUserId }) => {
                                         📄 Файлы
                                     </button>
                                 </li>
-                                <li className="border-b border-white/5">
-                                    <button
-                                        onClick={handleAudioClick}
-                                        className="w-full px-4 py-3 text-left text-sm text-gray-200 flex items-center gap-2.5 hover:bg-red-800 hover:pl-5 transition-all cursor-pointer border-none bg-transparent"
-                                    >
-                                        🎵 Голосовые сообщения
-                                    </button>
-                                </li>
+                                
                                 <li className="border-b border-white/5">
                                     <button
                                         onClick={handleMediaClick}

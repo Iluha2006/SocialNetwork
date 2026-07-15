@@ -1,37 +1,39 @@
-const cacheName = 'social-network-v4';
+const CACHE_VERSION = 'social-network-v5';
 
-const staticAssets = [
+const PRECACHE_ASSETS = [
+    '/offline.html',
     '/socials.png',
     '/mobile-social.png',
-    '/manifest.json'
+    '/manifest.json',
+    '/logo.png',
 ];
 
-self.addEventListener('install', async event => {
-    const cache = await caches.open(cacheName);
-    await cache.addAll(staticAssets);
-    self.skipWaiting();
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_VERSION).then(cache => {
+            return cache.addAll(PRECACHE_ASSETS);
+        }).then(() => self.skipWaiting())
+    );
 });
 
-self.addEventListener('activate', async event => {
+self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
+        caches.keys().then(keys => {
             return Promise.all(
-                cacheNames.map(cache => {
-                    if (cache !== cacheName) {
-                        return caches.delete(cache);
-                    }
-                })
+                keys.filter(key => key !== CACHE_VERSION)
+                    .map(key => caches.delete(key))
             );
-        })
+        }).then(() => self.clients.claim())
     );
-    event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', event => {
-    const request = event.request;
+    const { request } = event;
+
+    if (request.method !== 'GET') return;
 
     if (request.mode === 'navigate') {
-        event.respondWith(networkFirst(request));
+        event.respondWith(networkFirstWithOffline(request));
         return;
     }
 
@@ -44,22 +46,45 @@ self.addEventListener('fetch', event => {
 });
 
 function isStaticAsset(url) {
-    const urlObj = new URL(url);
-    const path = urlObj.pathname;
-    return /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/i.test(path);
+    const path = new URL(url).pathname;
+    return /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|webp|avif)$/i.test(path);
+}
+
+function isViteAsset(url) {
+    return new URL(url).pathname.startsWith('/build/');
+}
+
+async function networkFirstWithOffline(request) {
+    try {
+        const response = await fetch(request);
+        if (response.ok) {
+            const cache = await caches.open(CACHE_VERSION);
+            cache.put(request, response.clone());
+        }
+        return response;
+    } catch {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+
+        const offlinePage = await caches.match('/offline.html');
+        return offlinePage || new Response('Offline', {
+            status: 503,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+    }
 }
 
 async function networkFirst(request) {
     try {
         const response = await fetch(request);
         if (response.ok) {
-            const cache = await caches.open(cacheName);
+            const cache = await caches.open(CACHE_VERSION);
             cache.put(request, response.clone());
         }
         return response;
     } catch {
         const cached = await caches.match(request);
-        return cached || new Response('Offline', { status: 503 });
+        return cached || new Response('', { status: 503 });
     }
 }
 
@@ -70,11 +95,11 @@ async function cacheFirst(request) {
     try {
         const response = await fetch(request);
         if (response.ok) {
-            const cache = await caches.open(cacheName);
+            const cache = await caches.open(CACHE_VERSION);
             cache.put(request, response.clone());
         }
         return response;
     } catch {
-        return new Response('Not found', { status: 404 });
+        return new Response('', { status: 404 });
     }
 }

@@ -1,18 +1,27 @@
 {
-    "id":"/",
-    "name": "social-network",
-    "short_name": "LPT",
-    "background_color": "#1c0a5c",
-    "display": "standalone",
-    "description": "A Progressive Web Application setup for Laravel projects.",
-    "theme_color": "#6777ef",
+    "id": "/",
+    "name": "Social Network",
+    "short_name": "Social",
+    "description": "Общение, друзья, сообщества",
     "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#1c0a5c",
+    "theme_color": "#6777ef",
+    "categories": ["social", "communication"],
     "icons": [
         {
             "src": "socials.png",
             "sizes": "512x512",
-            "type": "image/png"
-
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "socials.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
     "screenshots": [
@@ -21,14 +30,12 @@
             "sizes": "512x512",
             "type": "image/png",
             "form_factor": "wide"
-
         },
         {
             "src": "mobile-social.png",
             "sizes": "423x423",
             "type": "image/png",
             "form_factor": "narrow"
-
         }
     ]
-    }
+}

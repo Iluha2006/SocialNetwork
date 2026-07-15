@@ -8,8 +8,11 @@ import MessageInput from '../../../UI/Message/MessageInput';
 
 import { useLoadConversationMessagesQuery } from '../../../api/modules/conversations';
 import { useGetAllProfilesQuery } from '../../../api/modules/profileApi';
+import { useEditMessageMutation } from '../../../api/modules/messages';
 import { getConversationAudio } from "../../../store/Files/AudioMessage";
 import { selectSelectedBackgroundByChatId } from "../../../store/Files/BacroundImages";
+import { initChatTheme, selectChatTheme } from "../../../store/Theme/chatThemeSlice";
+import { applyChatTheme } from "../../../components/ThemeChat/chatThemes";
 import useMessageSocket from "../../../hooks/Socket/useMessageSocket";
 import DeleteMessageButton from "../DeleteMessage/DeleteMessageButton";
 import useMessageDeletion from "../../../hooks/useMessageDeletion";
@@ -34,8 +37,25 @@ const formatMessageTime = (message) => {
     });
 };
 
-const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isBlocked, onClick, onDeleteSuccess }) => {
+const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isBlocked, onClick, onDeleteSuccess, isEditing, editingText, onEditChange, onEditSave, onEditCancel, onEditStart }) => {
     const msgType = message.type || 'text';
+    const editInputRef = useRef(null);
+
+    useEffect(() => {
+        if (isEditing && editInputRef.current) {
+            editInputRef.current.focus();
+            editInputRef.current.selectionStart = editInputRef.current.value.length;
+        }
+    }, [isEditing]);
+
+    const handleEditKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            onEditSave();
+        } else if (e.key === 'Escape') {
+            onEditCancel();
+        }
+    };
 
     return (
         <div
@@ -104,9 +124,30 @@ const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isB
                                 </div>
                             )}
                             {message.content && (
-                                <div className="message-text whitespace-pre-wrap break-words">
-                                    {message.content}
-                                </div>
+                                isEditing ? (
+                                    <textarea
+                                        ref={editInputRef}
+                                        className="message-edit-input"
+                                        value={editingText}
+                                        onChange={(e) => onEditChange(e.target.value)}
+                                        onKeyDown={handleEditKeyDown}
+                                        onBlur={onEditSave}
+                                        onClick={(e) => e.stopPropagation()}
+                                        rows={1}
+                                        style={{
+                                            color: isMyMessage
+                                                ? 'var(--chat-my-message-text, #ffffff)'
+                                                : 'var(--chat-text, #212529)',
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="message-text whitespace-pre-wrap break-words">
+                                        {message.content}
+                                        {message.edited && (
+                                            <span className="message-edited-flag text-[10px] opacity-60 ml-1">(ред.)</span>
+                                        )}
+                                    </div>
+                                )
                             )}
                         </>
                     )}
@@ -119,13 +160,29 @@ const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isB
                 </div>
 
                 {isMyMessage && isSelected && (
-                    <DeleteMessageButton
-                        messageId={message.id}
-                        messageType={msgType}
-                        senderId={message.sender_id ?? message.senderId}
-                        receiverId={message.receiverId}
-                        onDeleteSuccess={onDeleteSuccess}
-                    />
+                    <div className="message-actions-row flex items-center gap-1 mt-1" style={{ justifyContent: isMyMessage ? 'flex-end' : 'flex-start' }}>
+                        {!isEditing && msgType === 'text' && message.content && (
+                            <button
+                                className="edit-message-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditStart();
+                                }}
+                                title="Редактировать"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                                </svg>
+                            </button>
+                        )}
+                        <DeleteMessageButton
+                            messageId={message.id}
+                            messageType={msgType}
+                            senderId={message.sender_id ?? message.senderId}
+                            receiverId={message.receiverId}
+                            onDeleteSuccess={onDeleteSuccess}
+                        />
+                    </div>
                 )}
             </div>
         </div>
@@ -143,7 +200,10 @@ const MessageUser = memo(() => {
     const allProfilesFromSlice = useSelector((state) => state.profile.allProfiles);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
+    const [editingMessageId, setEditingMessageId] = useState(null);
+    const [editingText, setEditingText] = useState('');
     const { handleDeleteMessage } = useMessageDeletion(userId);
+    const [editMessage] = useEditMessageMutation();
 
     const isBlocked = viewedProfile?.is_blocked || false;
     const hasBlockedThisUser = viewedProfile?.has_blocked_this_user || false;
@@ -217,11 +277,44 @@ const MessageUser = memo(() => {
         }
     }, [handleDeleteMessage]);
 
+    const handleEditStart = useCallback(() => {
+        if (selectedMessage) {
+            setEditingMessageId(selectedMessage.id);
+            setEditingText(selectedMessage.content || '');
+        }
+    }, [selectedMessage]);
+
+    const handleEditSave = useCallback(async () => {
+        if (!editingMessageId || !editingText.trim()) {
+            setEditingMessageId(null);
+            setEditingText('');
+            return;
+        }
+        const trimmed = editingText.trim();
+        if (trimmed === selectedMessage?.content) {
+            setEditingMessageId(null);
+            setEditingText('');
+            return;
+        }
+        await editMessage({ messageId: editingMessageId, content: trimmed });
+        setEditingMessageId(null);
+        setEditingText('');
+        setSelectedMessage(null);
+        setShowDeleteButton(false);
+    }, [editingMessageId, editingText, selectedMessage, editMessage]);
+
+    const handleEditCancel = useCallback(() => {
+        setEditingMessageId(null);
+        setEditingText('');
+    }, []);
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (selectedMessage && !event.target.closest(".message-bubble")) {
                 setSelectedMessage(null);
                 setShowDeleteButton(false);
+                setEditingMessageId(null);
+                setEditingText('');
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -245,6 +338,20 @@ const MessageUser = memo(() => {
     const chatId = useMemo(() => {
         return [user?.id, parseInt(userId)].sort().join('-');
     }, [user?.id, userId]);
+
+    const currentChatTheme = useSelector(state => selectChatTheme(state, chatId));
+
+    useEffect(() => {
+        if (chatId) {
+            dispatch(initChatTheme({ chatId }));
+        }
+    }, [chatId, dispatch]);
+
+    useEffect(() => {
+        if (currentChatTheme) {
+            applyChatTheme(currentChatTheme);
+        }
+    }, [currentChatTheme]);
 
     const selectedBackground = useSelector((state) =>
         selectSelectedBackgroundByChatId(state, chatId)
@@ -321,6 +428,12 @@ const MessageUser = memo(() => {
                                 isBlocked={isBlocked}
                                 onClick={() => handleMessageClick(message)}
                                 onDeleteSuccess={handleDeleteSuccess}
+                                isEditing={editingMessageId === message.id}
+                                editingText={editingMessageId === message.id ? editingText : ''}
+                                onEditChange={setEditingText}
+                                onEditSave={handleEditSave}
+                                onEditCancel={handleEditCancel}
+                                onEditStart={handleEditStart}
                             />
                         );
                     })

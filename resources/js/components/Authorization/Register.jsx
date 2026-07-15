@@ -66,7 +66,9 @@ const Register = () => {
   };
 
   return (
-    <div className="m-7 w-96 sm:w-full max-w-md mx-auto my-8 p-8 bg-[rgba(1,14,24,0.946)] border border-gray-700 rounded-lg shadow-lg">
+
+
+    <div className="m-7 sm: max-w-md mx-auto my-8 p-8 bg-[rgba(1,14,24,0.946)] border border-gray-700 rounded-lg shadow-lg">
       <h2 className="text-2xl text-white text-center font-semibold mb-6">Регистрация</h2>
 
 
@@ -135,9 +137,9 @@ const Register = () => {
       </form>
 
       <div className="relative flex items-center my-6">
-        <div className="flex-grow border-t border-gray-600"></div>
-        <span className="flex-shrink mx-4 text-gray-400 text-sm">или</span>
-        <div className="flex-grow border-t border-gray-600"></div>
+        <div className="grow border-t border-gray-600"></div>
+        <span className="shrink mx-4 text-gray-400 text-sm">или</span>
+        <div className="grow border-t border-gray-600"></div>
       </div>
 
 
