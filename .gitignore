@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+grafana/grafana.db
+grafana/plugins/
+grafana/unified-search/
