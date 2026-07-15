@@ -232,6 +232,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/posts', [PostController::class, 'getAllPosts']);
 
+Route::get('/metrics', function () {
+    $registry = app(\Prometheus\CollectorRegistry::class);
+    $renderer = new \Prometheus\RenderTextFormat();
+    $result = $renderer->render($registry->getMetricFamilySamples());
+    return response($result, 200)->header('Content-Type', 'text/plain');
+})->withoutMiddleware(['auth.token', 'auth:sanctum']);
+
 
 
 

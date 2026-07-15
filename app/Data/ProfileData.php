@@ -13,5 +13,6 @@ class ProfileData extends Data
         public readonly ?string $bio,
         public readonly ?string $email = null,
         public readonly ?string $avatar = null,
+        public readonly ?string $created_at = null,
     ) {}
 }

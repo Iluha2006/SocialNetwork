@@ -15,6 +15,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'http://localhost:8077', 
         'http://localhost:8000',
         'http://127.0.0.1:8000',
         'http://localhost:5173',

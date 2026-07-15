@@ -46,6 +46,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/images': {
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/posts': {
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
