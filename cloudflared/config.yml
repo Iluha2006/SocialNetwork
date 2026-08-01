@@ -1,0 +1,17 @@
+tunnel: social-tunnel
+credentials-file: /etc/cloudflared/social-tunnel.json
+
+ingress:
+  - hostname: app.social.com
+    service: http://nginx:80
+  - hostname: api.social.com
+    service: http://nginx:80
+  - hostname: www.social.com
+    service: http://nginx:80
+  - hostname: social.com
+    service: http://nginx:80
+  - hostname: l.social.com
+    service: http://nginx:80
+  - hostname: stage.social.com
+    service: http://nginx:80
+  - service: http_status:404
