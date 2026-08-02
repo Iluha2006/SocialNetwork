@@ -1,4 +1,5 @@
 import React from 'react';
+import { normalizeMediaUrl } from '../../utils/mediaUrl';
 
 const ModalFriends = ({ isOpen, onClose, friends, onViewProfile }) => {
     if (!isOpen) return null;
@@ -45,7 +46,7 @@ const ModalFriends = ({ isOpen, onClose, friends, onViewProfile }) => {
                                 title={friend.name}
                             >
                                 <img
-                                    src={friend.avatar || defaultAvatar}
+                                    src={normalizeMediaUrl(friend.avatar) || defaultAvatar}
                                     alt={friend.name}
                                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover mb-2 border-2 border-transparent transition-colors hover:border-blue-500"
                                 />

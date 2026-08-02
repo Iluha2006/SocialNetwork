@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 import { removeAudioConversation } from '../../store/Files/AudioMessage';
+import { normalizeMediaUrl } from '../../utils/mediaUrl';
 import {
     useFetchChatListQuery,
     useDeleteChatMutation
@@ -67,7 +68,7 @@ const ChatItem = memo(({ chat, isOnline, otherUserProfile, lastMessageText, last
         >
             <div className="relative">
                 <img
-                    src={otherUserProfile?.avatar || DEFAULT_AVATAR}
+                    src={normalizeMediaUrl(otherUserProfile?.avatar) || DEFAULT_AVATAR}
                     alt="Аватар"
                     className="w-12 h-12 rounded-full object-cover"
                 />

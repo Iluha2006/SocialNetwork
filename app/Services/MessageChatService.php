@@ -114,6 +114,10 @@ class MessageChatService
             throw new \RuntimeException('Невозможно отправить сообщение самому себе', 422);
         }
 
+        if (!\App\Models\User::whereKey($receiverId)->exists()) {
+            throw new \RuntimeException('Получатель не найден', 404);
+        }
+
         if ($this->areUsersBlocked($userId, $receiverId)) {
             throw new \RuntimeException('Невозможно отправить сообщение: пользователь заблокирован', 403);
         }
@@ -161,6 +165,10 @@ class MessageChatService
     public function getChatMessages(int $currentUserId, int $otherUserId)
     {
         if ($this->areUsersBlocked($currentUserId, $otherUserId)) {
+            return collect([]);
+        }
+
+        if ($currentUserId === $otherUserId) {
             return collect([]);
         }
 

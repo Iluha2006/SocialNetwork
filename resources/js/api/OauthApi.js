@@ -10,6 +10,7 @@ import {
 } from '../store/Auth/Oauth';
 import { profileApi } from './modules/profileApi';
 import { setProfile } from '../store/settings/Profile';
+import { setAuthData } from '../store/Auth/UserStore';
 
 export const oauthApi = createApi({
     reducerPath: 'oauthApi',
@@ -42,6 +43,14 @@ export const oauthApi = createApi({
                             id: user.id,
                             name: user.name,
                             providers: user.providers || [],
+                        }));
+
+                        dispatch(setAuthData({
+                            user: {
+                                id: user.id,
+                                name: user.name,
+                                email: user.email || '',
+                            }
                         }));
 
                         dispatch(setOAuthData({
@@ -107,6 +116,14 @@ export const oauthApi = createApi({
                             id: userData.id,
                             name: userData.name,
                             providers: userData.providers || [],
+                        }));
+
+                        dispatch(setAuthData({
+                            user: {
+                                id: userData.id,
+                                name: userData.name,
+                                email: userData.email || '',
+                            }
                         }));
 
                         dispatch(setOAuthData({

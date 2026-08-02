@@ -151,6 +151,7 @@ export const authApi = createApi({
 
                     dispatch(profileApi.util.resetApiState());
                     dispatch(authApi.util.resetApiState());
+                    dispatch(clearAuth());
 
                 } catch (err) {
 

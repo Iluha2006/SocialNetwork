@@ -24,6 +24,7 @@ services:
       - AWS_BUCKET=social-media
       - AWS_ENDPOINT=http://storage:9000
       - AWS_URL=http://storage:9000
+      - AWS_PUBLIC_URL=/social-media
       - AWS_USE_PATH_STYLE_ENDPOINT=true
       - FILESYSTEM_DISK=s3
     
@@ -162,6 +163,7 @@ services:
       - CACHE_STORE=redis
       - AWS_ENDPOINT=http://storage:9000
       - AWS_URL=http://storage:9000
+      - AWS_PUBLIC_URL=/social-media
       - AWS_BUCKET=social-media
       - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
       - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}

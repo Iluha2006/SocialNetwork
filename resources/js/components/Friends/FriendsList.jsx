@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 import { fetchFriends, deleteFriend } from '../../store/Friends/FriendList';
+import { normalizeMediaUrl } from '../../utils/mediaUrl';
 
 
 const FriendsList = () => {
@@ -92,7 +93,7 @@ const FriendsList = () => {
                                 >
                                     <div className="relative mr-4">
                                         <img
-                                            src={friend.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
+                                            src={normalizeMediaUrl(friend.avatar) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
                                             alt={friend.name}
                                             className="w-20 h-20 rounded-full object-cover border-4 border-gray-100 shadow-md transition-all hover:border-blue-500"
                                             onError={(e) => { if (e.target.src === 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E') return;

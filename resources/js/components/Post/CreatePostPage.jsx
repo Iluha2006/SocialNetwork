@@ -105,7 +105,7 @@ const CreatePost = () => {
                         id="image"
                         type="file"
                         accept="image/*"
-                        onChange={handleImageCh3ange}
+                        onChange={handleImageChange}
                         className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
                     {image && (

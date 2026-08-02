@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import ThemeToggle from '../../components/ThemeSocialNetwork/ThemeToggle';
 import { useGetProfileQuery } from '../../api/modules/profileApi';
+import { normalizeMediaUrl } from '../../utils/mediaUrl';
 
 export default function ModalProfile({
   isOpen,
@@ -32,11 +33,11 @@ export default function ModalProfile({
   const getAvatar = () => {
 
     if (profileData?.avatar) {
-      return profileData.avatar;
+      return normalizeMediaUrl(profileData.avatar);
     }
    
     if (oauthUser?.avatar) {
-      return oauthUser.avatar;
+      return normalizeMediaUrl(oauthUser.avatar);
     }
     return null;
   };
@@ -82,9 +83,9 @@ export default function ModalProfile({
   const userName = getUserName();
 
   return (
-    <div className="absolute inset-0 z-50 flex justify-end items-start pt-20 mr-6">
+    <div className=" absolute right-0 top-full mt-3 z-50">
       <div
-        className="modal-profile-content text-amber-50 rounded-xl w-48 mr-5 shadow-lg animate-in fade-in-0 zoom-in-95"
+        className="modal-profile-content text-amber-50 rounded-xl w-48 shadow-lg animate-in fade-in-0 zoom-in-95"
         style={{ backgroundColor: 'rgba(1, 14, 24, 0.946)' }}
       >
         <div className="flex justify-between items-center px-5 py-4 border-b border-gray-700">

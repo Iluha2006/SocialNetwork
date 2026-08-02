@@ -19,7 +19,8 @@ import useMessageDeletion from "../../../hooks/useMessageDeletion";
 import getFileIcon from "../../../utils/getFileIcon";
 import BlockedChatView from "../../../UI/Message/BlockedChatView";
 import { findProfileById } from "../../../utils/MessageChat/findProfile";
-
+import { normalizeMediaUrl } from "../../../utils/mediaUrl";
+import formatMessageTime from "../../../utils/MessageChat/fromMessage";
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E";
 
 const handleAvatarError = (e) => {
@@ -27,15 +28,6 @@ const handleAvatarError = (e) => {
     e.target.src = DEFAULT_AVATAR;
 };
 
-const formatMessageTime = (message) => {
-    const raw = message.timestamp || message.created_at;
-    const dateStr = typeof raw === 'string' && !raw.endsWith('Z') && !raw.includes('+') ? raw + 'Z' : raw;
-    return new Date(dateStr).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-    });
-};
 
 const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isBlocked, onClick, onDeleteSuccess, isEditing, editingText, onEditChange, onEditSave, onEditCancel, onEditStart }) => {
     const msgType = message.type || 'text';
@@ -64,7 +56,7 @@ const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isB
         >
             {!isMyMessage && (
                 <img
-                    src={senderProfile?.avatar || DEFAULT_AVATAR}
+                    src={normalizeMediaUrl(senderProfile?.avatar) || DEFAULT_AVATAR}
                     alt="Аватар"
                     className="message-sender-avatar w-8 h-8 rounded-full object-cover mr-2 mt-1"
                     onError={handleAvatarError}
@@ -98,12 +90,12 @@ const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isB
                             {message.images && (
                                 <div className="message-image-container mb-2">
                                     <img
-                                        src={message.images}
+                                        src={normalizeMediaUrl(message.images)}
                                         alt="Прикрепленное изображение"
                                         className="message-image max-w-full rounded-lg cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            window.open(message.images, "_blank");
+                                            window.open(normalizeMediaUrl(message.images), "_blank");
                                         }}
                                     />
                                 </div>
@@ -111,7 +103,7 @@ const MessageItem = memo(({ message, isMyMessage, senderProfile, isSelected, isB
                             {message.file && (
                                 <div className="message-files mb-2">
                                     <a
-                                        href={message.file}
+                                        href={normalizeMediaUrl(message.file)}
                                         download={message.file_name || message.file.split('/').pop()}
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 hover:underline"
@@ -382,6 +374,17 @@ const MessageUser = memo(() => {
 
     if (isProfilesLoading) return <div className="loading">Загрузка...</div>;
     if (isProfilesError) return <div className="error">Ошибка загрузки профилей</div>;
+
+    if (user?.id && Number(userId) === Number(user.id)) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen text-center p-6"
+                style={{ background: 'var(--chat-background, #ffffff)', color: 'var(--chat-text, #6c757d)' }}
+            >
+                <p className="text-lg mb-2">Вы не можете писать самому себе</p>
+                <span className="text-sm">Откройте чат с другим пользователем</span>
+            </div>
+        );
+    }
 
     if (isBlocked) {
         return (

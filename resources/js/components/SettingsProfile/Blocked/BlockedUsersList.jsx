@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { normalizeMediaUrl } from '../../../utils/mediaUrl';
 
 
 import {
@@ -185,7 +186,7 @@ const BlockedUsersList = () => {
                                         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 overflow-hidden border-2 border-white/20">
                                             {user.avatar ? (
                                                 <img
-                                                    src={user.avatar || user.profile?.avatar}
+                                                    src={normalizeMediaUrl(user.avatar || user.profile?.avatar)}
                                                     alt={user.name}
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
