@@ -6,9 +6,15 @@ import laravel from 'laravel-vite-plugin';
 
 dns.setDefaultResultOrder('verbatim');
 
-const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://nginx'; 
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:8088'; 
 
 export default defineConfig({
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime'],
+  },
   plugins: [
     react(),
     laravel({
@@ -17,12 +23,21 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-dom/client'],
+        },
+      },
+    },
+  },
   server: {
-    host: '0.0.0.0', 
+    host: 'localhost', 
     port: 5173,
     hmr: {
-      host: process.env.VITE_HMR_HOST || 'localhost',
-      clientPort: 5173,
+      host: 'localhost',
+      port: 5173,
       protocol: 'ws',
     },
     proxy: {
@@ -52,6 +67,11 @@ export default defineConfig({
         secure: false,
       },
       '/posts': {
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/social-media': {
         target: proxyTarget,
         changeOrigin: true,
         secure: false,

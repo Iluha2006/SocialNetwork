@@ -41,20 +41,20 @@ RUN docker-php-ext-configure gd \
     && docker-php-ext-enable gd pdo_pgsql \
     && pecl install redis && docker-php-ext-enable redis
 
-# 🔥 3. Устанавливаем Composer
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 🔥 4. Рабочая директория
+
 WORKDIR /var/www/html
 
-# 🔥 5. Копируем composer файлы и устанавливаем зависимости
+
 COPY composer.json composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
-# 🔥 6. Копируем весь проект
+
 COPY . .
 
-# 🔥 7. Создаём директории и устанавливаем права
+
 RUN mkdir -p \
         storage/framework/{sessions,views,cache} \
         storage/logs \
@@ -67,8 +67,7 @@ RUN mkdir -p \
         storage \
         bootstrap/cache
 
-# 🔥 8. PHP-FPM слушает порт 9000
+
 EXPOSE 9000
 
-# 🔥 9. Запускаем PHP-FPM
 CMD ["php-fpm"]

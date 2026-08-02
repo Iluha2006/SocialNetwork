@@ -4,6 +4,8 @@ FROM nginx:alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/nginx.conf
+COPY laravel-app.conf /etc/nginx/laravel-app.conf
+COPY .htpasswd /etc/nginx/.htpasswd
 COPY ssl/ /etc/nginx/ssl/
 
 EXPOSE 80 443

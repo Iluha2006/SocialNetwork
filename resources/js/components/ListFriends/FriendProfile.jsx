@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 import { fetchFriends } from '../../store/Friends/FriendList';
+import ModalFriends from '../../UI/Profile/ModalFriends';
 
 
 const FriendProfile = () => {
@@ -19,9 +20,7 @@ const FriendProfile = () => {
         }
     }, [dispatch, user?.id]);
 
-    const handleViewAllFriends = () => {
-        navigate('/friends');
-    };
+    const [showAllFriendsModal, setShowAllFriendsModal] = useState(false);
 
     const handleViewProfile = (friendId) => {
         navigate(`/profile/${friendId}`);
@@ -83,13 +82,20 @@ const FriendProfile = () => {
                     {totalFriends > 6 && (
                         <button
                             className="w-full py-2.5 bg-gray-700 border-none rounded-lg text-blue-400 font-medium cursor-pointer transition-colors hover:bg-gray-600"
-                            onClick={handleViewAllFriends}
+                            onClick={() => setShowAllFriendsModal(true)}
                         >
                             Показать всех друзей ({totalFriends})
                         </button>
                     )}
                 </>
             )}
+
+            <ModalFriends
+                isOpen={showAllFriendsModal}
+                onClose={() => setShowAllFriendsModal(false)}
+                friends={friends}
+                onViewProfile={handleViewProfile}
+            />
         </div>
     );
 };

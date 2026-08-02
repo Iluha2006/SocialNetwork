@@ -52,7 +52,7 @@ export default function ResendVerificationPage() {
       } else {
         message = errorData?.message || err.message || message;
       }
-
+      
       setNotification({ type: 'error', message });
       console.error('Resend failed:', err);
     }

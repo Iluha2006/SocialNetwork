@@ -12,20 +12,23 @@ const OAuthCallback = () => {
 
     useEffect(() => {
         const handleCallback = async () => {
+            if (!code) {
+                navigate('/error-oauth');
+                return;
+            }
 
-
-
-
+            try {
                 const result = await yandexCallback({ code }).unwrap();
                 if (result && result.success) {
                     navigate('/home', { replace: true });
                 } else {
                     navigate('/error-oauth');
                 }
+            } catch (error) {
+                console.error('Yandex callback error:', error);
+                navigate('/error-oauth');
             }
-
-
-
+        };
 
         handleCallback();
     }, [code, navigate, yandexCallback]);

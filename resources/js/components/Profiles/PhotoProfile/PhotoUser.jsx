@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchUserImages, deleteUserImage } from '../../../store/Files/ImagesStore';
+import { normalizeMediaUrl, DEFAULT_IMAGE_ERROR } from '../../../utils/mediaUrl';
 
 
 const UserPhotos = () => {
@@ -84,11 +85,11 @@ const UserPhotos = () => {
         >
           <div className="relative">
             <img
-              src={image.path_image}
+              src={normalizeMediaUrl(image.path_image)}
               alt={`Фото ${index + 1}`}
               className=" h-48 object-cover"
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/200x200?text=Ошибка+загрузки';
+                e.target.src = DEFAULT_IMAGE_ERROR;
               }}
             />
 
@@ -120,7 +121,7 @@ const UserPhotos = () => {
         onClick={(e) => e.stopPropagation()}
       >
         <img
-          src={selectedImage.path_image}
+          src={normalizeMediaUrl(selectedImage.path_image)}
           alt="Просмотр фото"
           className="max-w-full max-h-[80vh] object-contain rounded-lg"
         />

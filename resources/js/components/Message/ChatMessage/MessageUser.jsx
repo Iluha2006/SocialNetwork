@@ -7,7 +7,7 @@ import ChatHeader from '../../../layout/ChatMessages/ChatHeader';
 import MessageInput from '../../../UI/Message/MessageInput';
 
 import { useLoadConversationMessagesQuery } from '../../../api/modules/conversations';
-import { useGetAllProfilesQuery } from '../../../api/modules/profileApi';
+import { useGetAllProfilesQuery, useGetProfileQuery } from '../../../api/modules/profileApi';
 import { useEditMessageMutation } from '../../../api/modules/messages';
 import { getConversationAudio } from "../../../store/Files/AudioMessage";
 import { selectSelectedBackgroundByChatId } from "../../../store/Files/BacroundImages";
@@ -205,8 +205,14 @@ const MessageUser = memo(() => {
     const { handleDeleteMessage } = useMessageDeletion(userId);
     const [editMessage] = useEditMessageMutation();
 
-    const isBlocked = viewedProfile?.is_blocked || false;
-    const hasBlockedThisUser = viewedProfile?.has_blocked_this_user || false;
+    const { data: recipientProfileData } = useGetProfileQuery(userId, {
+        skip: !userId,
+    });
+
+    const recipientProfileBlock = recipientProfileData?.profile || recipientProfileData;
+
+    const isBlocked = recipientProfileData?.is_blocked ?? false;
+    const hasBlockedThisUser = recipientProfileData?.has_blocked_this_user ?? false;
 
     const {
         data: allProfilesData,
@@ -392,7 +398,7 @@ const MessageUser = memo(() => {
     }
 
     return (
-        <div className="w-full md:max-w-[600px] lg:max-w-3xl xl:max-w-5xl 2xl:max-w-[1000px] mx-auto h-screen max-h-screen flex flex-col rounded-2xl shadow-lg transition-colors relative"
+        <div className="w-full md:max-w-150 lg:max-w-3xl xl:max-w-5xl 2xl:max-w-[500px] mx-auto h-screen max-h-screen flex flex-col rounded-2xl shadow-lg transition-colors relative"
             style={{ background: 'var(--chat-background, #ffffff)' }}
         >
             <ChatHeader

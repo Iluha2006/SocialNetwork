@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'social-network-v5';
+const CACHE_VERSION = 'social-network-v6';
 
 const PRECACHE_ASSETS = [
     '/offline.html',
@@ -29,8 +29,13 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     const { request } = event;
+    const url = new URL(request.url);
 
     if (request.method !== 'GET') return;
+
+    if (url.pathname.startsWith('/node_modules/') || url.pathname.includes('/@vite/') || url.pathname.includes('vite/client')) {
+        return;
+    }
 
     if (request.mode === 'navigate') {
         event.respondWith(networkFirstWithOffline(request));
@@ -47,11 +52,7 @@ self.addEventListener('fetch', event => {
 
 function isStaticAsset(url) {
     const path = new URL(url).pathname;
-    return /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|webp|avif)$/i.test(path);
-}
-
-function isViteAsset(url) {
-    return new URL(url).pathname.startsWith('/build/');
+    return /\.(css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|webp|avif)$/i.test(path);
 }
 
 async function networkFirstWithOffline(request) {

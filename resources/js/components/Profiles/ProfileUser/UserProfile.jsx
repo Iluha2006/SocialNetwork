@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
@@ -23,6 +23,7 @@ import ProfileDetail from '../../SettingsProfile/ModalDetail/ProfileDetail';
 import FriendButton from '../../../UI/Button/UserProfile/FriendButton';
 import MessageButton from '../../../UI/Button/UserProfile/MessageButton';
 import BlockButton from '../../../UI/Button/UserProfile/BlockButton';
+import ModalFriends from '../../../UI/Profile/ModalFriends';
 
 const UserProfile = () => {
     const navigate = useNavigate();
@@ -45,8 +46,8 @@ const UserProfile = () => {
     });
   
      const profile = profileResponse?.profile;
-    const isBlocked = profile?.is_blocked || false;
-    const hasBlockedThisUser = profile?.has_blocked_this_user || false;
+    const isBlocked = profileResponse?.is_blocked || false;
+    const hasBlockedThisUser = profileResponse?.has_blocked_this_user || false;
 
 const getUserId = () => {
     return profile?.id 
@@ -71,6 +72,7 @@ const getUserId = () => {
     const totalFriends = friends?.length || 0;
     const [blockUserMutation] = useBlockUserMutation();
     const [unblockUserMutation] = useUnblockUserMutation();
+    const [showAllFriendsModal, setShowAllFriendsModal] = useState(false);
 
     const isLoading = isProfileLoading || isPrivacyLoading || isFriendshipLoading;
 
@@ -111,10 +113,6 @@ const getUserId = () => {
 
     const handleViewProfile = (friendId) => {
         navigate(`/profile/${friendId}`);
-    };
-
-    const handleViewAllFriends = () => {
-        navigate(`/friends/${userId}`);
     };
 
 
@@ -172,7 +170,29 @@ if (profileError) {
                                 <span className="absolute bottom-4 right-4 w-5 h-5 bg-green-500 border-3 border-[rgba(1,14,24,0.946)] rounded-full"></span>
                             )}
                         </div>
+<div className="flex-1 m-auto justify-center mt-3 text-center md:text-left">
+       
+        <div className="space-y-2">
+            <div className="flex items-center justify-center md:justify-start text-lg text-white">
+                <strong className="text-gray-300 font-medium">ID пользователя:</strong>
+                <span className="ml-2">{getUserId()}</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start text-lg text-white">
+                <strong className="text-white font-semibold text-xl">
+                    {profile.name}
+                </strong>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className={`text-sm ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'text-green-400' : 'text-gray-400'}`}>
+                    {onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'В сети' : 'Не в сети'}
+                </span>
+            </div>
 
+
+        </div>
+         <ProfileDetail userId={ getUserId () } />
+    </div>
 
                         <div className="flex flex-col gap-3 mt-5 items-center md:items-start w-full md:w-auto">
                             {profile && (
@@ -188,7 +208,7 @@ if (profileError) {
                              <MessageButton
                                  recipientId={getUserId()}
                                  recipientName={profile.name}
-                                 disabled={false}
+                                 disabled={isBlocked || hasBlockedThisUser}
                                  className="w-full"
                              />
 
@@ -200,32 +220,12 @@ if (profileError) {
                              />
                          </>
                             )}
-                            <ProfileDetail userId={ getUserId () } />
+                           
                         </div>
 
 
 
-    <div className="flex-1 mt-3 text-center md:text-left">
-        <h3 className="text-xl font-semibold text-white mb-4">Информация об аккаунте</h3>
-        <div className="space-y-2">
-            <div className="flex items-center text-lg text-white">
-                <strong className="text-gray-300 font-medium min-w-32">ID пользователя:</strong>
-            { getUserId( )}
-            </div>
-            <div className="flex items-center text-lg text-white">
-                <strong className="text-white font-semibold text-xl min-w-32">
-                    {profile.name}
-                </strong>
-            </div>
-            <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                <span className={`text-sm ${onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'text-green-400' : 'text-gray-400'}`}>
-                    {onlineUsers.some(u => u.id === parseInt(userId) && u.online_status === 'online') ? 'В сети' : 'Не в сети'}
-                </span>
-            </div>
-
-        </div>
-    </div>
+    
 
                     </div>
                 </div>
@@ -270,25 +270,36 @@ if (profileError) {
 
                     {privacyInfo.canViewFriends ? (
 
-                        <div className="grid grid-cols-3 gap-3 mb-4">
-                            {friends.slice(0, 9).map(friend => (
-                                <div
-                                    key={friend.id}
-                                    className="flex flex-col items-center cursor-pointer text-center transition-transform hover:-translate-y-1"
-                                    onClick={() => handleViewProfile(friend.user_id || friend.id)}
-                                    title={friend.name}
+                        <>
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                                {friends.slice(0, 4).map(friend => (
+                                    <div
+                                        key={friend.id}
+                                        className="flex flex-col items-center cursor-pointer text-center transition-transform hover:-translate-y-1"
+                                        onClick={() => handleViewProfile(friend.user_id || friend.id)}
+                                        title={friend.name}
+                                    >
+                                        <img
+                                            src={friend.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
+                                            alt={friend.name}
+                                            className="w-16 h-16 md:w-18 md:h-18 rounded-full object-cover border-2 border-gray-200 mb-1.5"
+                                        />
+                                        <span className="text-xs text-blue-700 font-medium leading-tight max-w-16 truncate">
+                                            {friend.name}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {totalFriends > 4 && (
+                                <button
+                                    className="w-full py-2.5 border-none rounded-lg bg-gray-100 text-gray-600 text-sm cursor-pointer transition-colors hover:bg-gray-200 mb-2"
+                                    onClick={() => setShowAllFriendsModal(true)}
                                 >
-                                    <img
-                                        src={friend.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
-                                        alt={friend.name}
-                                        className="w-16 h-16 md:w-18 md:h-18 rounded-full object-cover border-2 border-gray-200 mb-1.5"
-                                    />
-                                    <span className="text-xs text-blue-700 font-medium leading-tight max-w-16 truncate">
-                                        {friend.name}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                                    Показать всех ({totalFriends})
+                                </button>
+                            )}
+                        </>
                     ) :
 
                         (
@@ -309,18 +320,16 @@ if (profileError) {
                                 <p>Список друзей скрыт</p>
                             </div>
                         )}
-                    {totalFriends > 9 && (
-                        <button
-                            className="w-full py-2.5 border-none rounded-lg bg-gray-100 text-gray-600 text-sm cursor-pointer transition-colors hover:bg-gray-200"
-                            onClick={handleViewAllFriends}
-                        >
-                            Показать всех друзей ({totalFriends})
-                        </button>
-                    )}
-
 
                 </div>
             </div>
+
+            <ModalFriends
+                isOpen={showAllFriendsModal}
+                onClose={() => setShowAllFriendsModal(false)}
+                friends={friends}
+                onViewProfile={handleViewProfile}
+            />
         </div>
 
     );

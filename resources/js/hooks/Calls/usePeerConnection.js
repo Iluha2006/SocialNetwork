@@ -1,9 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 export const usePeerConnection = () => {
     const peerConnectionRef = useRef(null);
     const localStreamRef = useRef(null);
     const remoteStreamRef = useRef(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isSpeaker, setIsSpeaker] = useState(false);
 
 
 
@@ -69,6 +71,20 @@ export const usePeerConnection = () => {
         }
     }, []);
 
+    const toggleMute = useCallback(() => {
+        if (localStreamRef.current) {
+            const audioTrack = localStreamRef.current.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMuted(!audioTrack.enabled);
+            }
+        }
+    }, []);
+
+    const toggleSpeaker = useCallback(() => {
+        setIsSpeaker(prev => !prev);
+    }, []);
+
     useEffect(() => {
         return () => {
             cleanup();
@@ -81,6 +97,10 @@ export const usePeerConnection = () => {
         remoteStreamRef,
         createPeerConnection,
         getLocalStream,
-        cleanup
+        cleanup,
+        toggleMute,
+        toggleSpeaker,
+        isMuted,
+        isSpeaker
     };
 };

@@ -44,7 +44,7 @@ class ProcessPostMediaJob implements ShouldQueue
             Storage::disk('s3')->put($path, $contents, 'public');
             Storage::disk('s3')->delete($this->imageTempPath);
 
-            $imageUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
+            $imageUrl = Storage::disk('s3')->url($path);
         }
 
         if ($this->videoTempPath && $this->videoFileName) {
@@ -54,7 +54,7 @@ class ProcessPostMediaJob implements ShouldQueue
             Storage::disk('s3')->put($path, $contents, 'public');
             Storage::disk('s3')->delete($this->videoTempPath);
 
-            $videoUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
+            $videoUrl = Storage::disk('s3')->url($path);
         }
 
         $post->update([

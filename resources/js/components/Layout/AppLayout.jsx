@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../Navbar/Sidebar';
 
 const AppLayout = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('feed');
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,16 +17,21 @@ const AppLayout = () => {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  const isChatPage = location.pathname.startsWith('/messages/');
+  const hideSidebar = isMobile && isChatPage;
+
   return (
     <div className="flex min-h-screen w-full">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isMobile={isMobile}
-        isOpen={isMenuOpen}
-        onToggle={() => setIsMenuOpen(!isMenuOpen)}
-      />
-      <div className="flex-1 ml-0 md:ml-60 lg:ml-64 w-full md:w-[calc(100%-16rem)] flex flex-col items-center overflow-y-auto min-h-screen p-0 md:p-6">
+      {!hideSidebar && (
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isMobile={isMobile}
+          isOpen={isMenuOpen}
+          onToggle={() => setIsMenuOpen(!isMenuOpen)}
+        />
+      )}
+      <div className={`flex-1 w-full flex flex-col items-center overflow-y-auto min-h-screen p-0 md:p-6 ${hideSidebar ? '' : 'ml-0 md:ml-60 lg:ml-64 md:w-[calc(100%-16rem)]'}`}>
         <Outlet />
       </div>
     </div>

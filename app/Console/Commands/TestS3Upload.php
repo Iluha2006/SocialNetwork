@@ -26,7 +26,7 @@ class TestS3Upload extends Command
         Storage::disk('s3')->put($path, $image, 'public');
         
        
-        $url = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
+        $url = Storage::disk('s3')->url($path);
         
         Post::create([
             'title' => 'Тест',

@@ -8,7 +8,8 @@ import {
 } from '../../store/Call/CallStore';
 import { usePeerConnection } from '../../hooks/Calls/usePeerConnection';
 import './CallPage.css';
-import ringtoneMp3 from '../../AudioMusic/Дора - Втюрилась (hitmos.fm).mp3';
+
+const DEFAULT_AVATAR = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E';
 
 const CallPage = () => {
     const { callId } = useParams();
@@ -92,44 +93,10 @@ const CallPage = () => {
         return `${mins}:${secs}`;
     };
 
-    const ringingRef = useRef(null);
-
-    useEffect(() => {
-        if (callStatus === 'ongoing' || !callId) {
-            if (ringingRef.current) {
-                ringingRef.current.pause();
-                ringingRef.current = null;
-            }
-            return;
-        }
-
-        const audio = new Audio(ringtoneMp3);
-        audio.loop = true;
-        audio.volume = 0.5;
-        ringingRef.current = audio;
-
-        audio.play().catch(() => {
-            const onInteraction = () => {
-                audio.play().catch(() => {});
-                document.removeEventListener('click', onInteraction);
-                document.removeEventListener('touchstart', onInteraction);
-            };
-            document.addEventListener('click', onInteraction);
-            document.addEventListener('touchstart', onInteraction);
-        });
-
-        return () => {
-            if (ringingRef.current) {
-                ringingRef.current.pause();
-                ringingRef.current = null;
-            }
-        };
-    }, [callStatus, callId]);
-
     const isRinging = callStatus !== 'ongoing' || !currentCall;
 
     const userName = otherUser?.name || 'Пользователь';
-    const userAvatar = otherUser?.avatar || '/default-avatar.png';
+    const userAvatar = otherUser?.avatar || DEFAULT_AVATAR;
     const userInitial = userName.charAt(0).toUpperCase();
 
     if (isRinging) {
@@ -141,13 +108,14 @@ const CallPage = () => {
                         <div className="call-avatar-pulse delay-1" />
                         <div className="call-avatar-pulse delay-2" />
                         <img
-                            src={userAvatar}
+                            src={userAvatar || "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E"}
                             alt={userName}
                             className="call-avatar-img"
+                            onError={(e) => { if (e.target.src !== DEFAULT_AVATAR) e.target.src = DEFAULT_AVATAR; }}
                         />
                     </div>
                     <div className="call-user-name">{userName}</div>
-                    <div className="call-status-text">Звоним...</div>
+                   
                     <div className="call-controls">
                         <button
                             onClick={handleEndCall}
@@ -177,6 +145,7 @@ const CallPage = () => {
                         src={userAvatar}
                         alt={userName}
                         className="call-avatar-img"
+                        onError={(e) => { if (e.target.src !== DEFAULT_AVATAR) e.target.src = DEFAULT_AVATAR; }}
                     />
                 </div>
                 <div className="call-user-name">{userName}</div>

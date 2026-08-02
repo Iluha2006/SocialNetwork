@@ -128,7 +128,7 @@ class ProfileService implements ProfileServiceInterface
     public function updateAvatar(Request $request): array
     {
         $validated = $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
         $user = $request->user();
@@ -141,14 +141,19 @@ class ProfileService implements ProfileServiceInterface
         $path = "avatars/{$fileName}";
         Storage::disk('s3')->put($path, file_get_contents($file), 'public');
 
-        $avatarUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
+        $avatarUrl = Storage::disk('s3')->url($path);
 
         $profile = Profile::where('user_id', $user->id)->first();
         if ($profile) {
             if ($profile->avatar) {
                 $oldPath = parse_url($profile->avatar, PHP_URL_PATH);
                 if ($oldPath) {
-                    Storage::disk('s3')->delete(ltrim($oldPath, '/'));
+                    $oldKey = ltrim($oldPath, '/');
+                    $bucketPrefix = env('AWS_BUCKET') . '/';
+                    if (str_starts_with($oldKey, $bucketPrefix)) {
+                        $oldKey = substr($oldKey, strlen($bucketPrefix));
+                    }
+                    Storage::disk('s3')->delete($oldKey);
                 }
             }
 

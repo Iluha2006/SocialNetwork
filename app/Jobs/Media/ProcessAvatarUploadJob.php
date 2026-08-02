@@ -32,15 +32,19 @@ class ProcessAvatarUploadJob implements ShouldQueue
         Storage::disk('s3')->put($path, $contents, 'public');
         Storage::disk('s3')->delete($this->tempPath);
 
-        $baseUrl = config('filesystems.disks.s3.url') ?: env('AWS_ENDPOINT');
-        $avatarUrl = $baseUrl . '/' . env('AWS_BUCKET') . '/' . $path;
+        $avatarUrl = Storage::disk('s3')->url($path);
 
         $profile = Profile::where('user_id', $this->userId)->first();
         if ($profile) {
             if ($profile->avatar) {
                 $oldPath = parse_url($profile->avatar, PHP_URL_PATH);
                 if ($oldPath) {
-                    Storage::disk('s3')->delete(ltrim($oldPath, '/'));
+                    $oldKey = ltrim($oldPath, '/');
+                    $bucketPrefix = env('AWS_BUCKET') . '/';
+                    if (str_starts_with($oldKey, $bucketPrefix)) {
+                        $oldKey = substr($oldKey, strlen($bucketPrefix));
+                    }
+                    Storage::disk('s3')->delete($oldKey);
                 }
             }
             $profile->avatar = $avatarUrl;

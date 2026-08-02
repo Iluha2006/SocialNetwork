@@ -102,8 +102,7 @@ Route::middleware(['auth.token' ])->group(function () {
         Route::get('/user/{userId}', [OnlineStatusController::class, 'checkUserStatus']);
     });
 });
-
-
+ 
 
     Route::prefix('contacts')->middleware(['auth.token' ])->group(function () {
         Route::get('/{userId}', [ContactController::class, 'index']);

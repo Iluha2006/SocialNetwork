@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
+import { normalizeMediaUrl, DEFAULT_AVATAR } from '../../../utils/mediaUrl';
 import './Avatar.css';
 
 const Avatar = () => {
-    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E';
-    const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
+    const [avatarUrl, setAvatarUrl] = useState(DEFAULT_AVATAR);
     const [uploadLoading, setUploadLoading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -14,13 +14,18 @@ const Avatar = () => {
 
     useEffect(() => {
         const savedAvatar = localStorage.getItem(`user_avatar_${user?.id}`);
-        if (savedAvatar) {
-            setAvatarUrl(savedAvatar);
+        const savedUrl = savedAvatar ? normalizeMediaUrl(savedAvatar) : null;
+        if (savedUrl && !savedUrl.startsWith('data:') && savedUrl !== savedAvatar) {
+            localStorage.setItem(`user_avatar_${user?.id}`, savedUrl);
+        }
+        if (savedUrl) {
+            setAvatarUrl(savedUrl);
         } else if (profile?.avatar) {
-            setAvatarUrl(profile.avatar);
-            localStorage.setItem(`user_avatar_${user?.id}`, profile.avatar);
+            const normalized = normalizeMediaUrl(profile.avatar);
+            setAvatarUrl(normalized);
+            localStorage.setItem(`user_avatar_${user?.id}`, normalized);
         } else {
-            setAvatarUrl(defaultAvatar);
+            setAvatarUrl(DEFAULT_AVATAR);
         }
     }, [profile, user?.id]);
 
@@ -51,14 +56,14 @@ const Avatar = () => {
             const response = await axios.post('/profile/avatar', formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
                 },
                 withCredentials: true
             });
 
             if (response.data.success) {
-                setAvatarUrl(response.data.avatar);
-                localStorage.setItem(`user_avatar_${user?.id}`, response.data.avatar);
+                const normalized = normalizeMediaUrl(response.data.avatar);
+                setAvatarUrl(normalized);
+                localStorage.setItem(`user_avatar_${user?.id}`, normalized);
             }
         } catch (err) {
             alert('Ошибка при загрузке аватарки');
@@ -83,9 +88,9 @@ const Avatar = () => {
                     alt="Аватар"
                     className="preview-image"
                     onError={(e) => {
-                        if (e.target.src === defaultAvatar) return;
+                        if (e.target.src === DEFAULT_AVATAR) return;
                         console.error('Error loading avatar, setting default');
-                        e.target.src = defaultAvatar;
+                        e.target.src = DEFAULT_AVATAR;
                     }}
                 />
                 {uploadLoading && <div className="upload-overlay">Загрузка...</div>}

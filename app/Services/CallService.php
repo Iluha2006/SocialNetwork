@@ -41,16 +41,13 @@ class CallService
     {
         return Auth::guard('api')->user() ?? Auth::guard('web')->user() ?? Auth::user();
     }
-    public function CallStatus(int $receiverId,int  $callerId)
+    public function CallStatus(int $receiverId, int $callerId)
     {
-        $callStatus = ['can_call' => true];
-
-
         $activeCall = Call::select(['id', 'status'])
             ->where(function($query) use ($receiverId, $callerId) {
-            $query->where('receiver_id', $receiverId)
-                  ->orWhere('caller_id', $receiverId);
-        })->whereIn('status', ['initiated', 'ringing', 'ongoing'])->first();
+                $query->where('receiver_id', $receiverId)
+                      ->orWhere('caller_id', $receiverId);
+            })->whereIn('status', ['initiated', 'ringing', 'ongoing'])->first();
 
         if ($activeCall) {
             return [
@@ -60,42 +57,7 @@ class CallService
             ];
         }
 
-
-        $lastCall = Call::where(function($query) use ($receiverId, $callerId) {
-            $query->where('caller_id', $callerId)
-                  ->where('receiver_id', $receiverId)
-                  ->orWhere('caller_id', $receiverId)
-                  ->where('receiver_id', $callerId);
-        })->latest()->first();
-
-        if (!$lastCall) {
-            return $callStatus;
-        }
-
-        switch ($lastCall->status) {
-            case 'ended':
-            case 'missed':
-            case 'rejected':
-
-                return $callStatus;
-
-            case 'initiated':
-            case 'ringing':
-
-                $lastCall->update(['status' => 'ringing']) ;
-                $lastCall->update(['status'=> 'initiated']) ;
-                return $callStatus;
-
-            case 'ongoing':
-                return [
-                    'can_call' => false,
-                    'error' => 'User is already in a call',
-                    'existing_call_id' => $lastCall->id
-                ];
-
-            default:
-                return $callStatus;
-        }
+        return ['can_call' => true];
     }
 
     public function CallAccept(Call $call, $sdpAnswer)

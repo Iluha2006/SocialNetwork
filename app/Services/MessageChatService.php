@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Block;
 use App\Models\FileMessage;
 use App\Models\Message;
 use App\Models\User;
@@ -36,6 +37,20 @@ class MessageChatService
         }
 
         $chatUserIds = $chatUserIds->unique()->values();
+
+        if ($chatUserIds->isEmpty()) {
+            return collect([]);
+        }
+
+        $blockedUserIds = Block::where('blocker_id', $userId)
+            ->pluck('blocked_id')
+            ->merge(
+                Block::where('blocked_id', $userId)
+                    ->pluck('blocker_id')
+            )
+            ->unique();
+
+        $chatUserIds = $chatUserIds->diff($blockedUserIds);
 
         if ($chatUserIds->isEmpty()) {
             return collect([]);
@@ -94,6 +109,11 @@ class MessageChatService
     public function sendMessage(array $data, int $receiverId, $image = null, $file = null)
     {
         $userId = Auth::id();
+
+        if ($this->areUsersBlocked($userId, $receiverId)) {
+            throw new \RuntimeException('Невозможно отправить сообщение: пользователь заблокирован', 403);
+        }
+
         $imageUrl = null;
         $fileUrl = null;
 
@@ -136,6 +156,10 @@ class MessageChatService
 
     public function getChatMessages(int $currentUserId, int $otherUserId)
     {
+        if ($this->areUsersBlocked($currentUserId, $otherUserId)) {
+            return collect([]);
+        }
+
         $cacheKey = "chat_messages:{$currentUserId}:{$otherUserId}";
 
         return Cache::remember($cacheKey, 300, function() use ($currentUserId, $otherUserId) {
@@ -206,11 +230,18 @@ class MessageChatService
             'public'
         );
 
-        $baseUrl = config('filesystems.disks.s3.url') ?: env('AWS_ENDPOINT');
-        $bucket = env('AWS_BUCKET');
+        $baseUrl = Storage::disk('s3')->url($storagePath);
 
-        return $baseUrl . '/' . $bucket . '/' . $storagePath;
+        return $baseUrl;
     }
 
+    private function areUsersBlocked(int $userId1, int $userId2): bool
+    {
+        return Block::where(function ($query) use ($userId1, $userId2) {
+            $query->where('blocker_id', $userId1)->where('blocked_id', $userId2);
+        })->orWhere(function ($query) use ($userId1, $userId2) {
+            $query->where('blocker_id', $userId2)->where('blocked_id', $userId1);
+        })->exists();
+    }
 
 }

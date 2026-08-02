@@ -131,7 +131,7 @@ const InstallPWA = () => {
                     <button onClick={installPWA} className="install-button">
                         Установить
                     </button>
-                    <button onClick={handleDismiss} className="dismiss-button">
+                    <button onClick={handleDismiss} className="install-button">
                         Не сейчас
                     </button>
                 </div>

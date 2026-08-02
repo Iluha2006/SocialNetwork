@@ -25,7 +25,7 @@ class ImageController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'profile_images' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'profile_images' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
         $imageData = $this->commandBus->dispatch(new UploadImageCommand($request));

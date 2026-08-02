@@ -73,13 +73,6 @@ const ImagesUpload = () => {
     try {
         const formData = new FormData();
         formData.append('profile_images', selectedFile);
-
- console.log('[ImageUpload] Sending file:', {
-            name: selectedFile.name,
-            type: selectedFile.type,
-            size: selectedFile.size,
-            instanceofFile: selectedFile instanceof File,
-        });
       
         const response = await axios.post('/images/upload', formData, {
             headers: {

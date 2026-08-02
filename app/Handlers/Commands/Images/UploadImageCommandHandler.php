@@ -21,7 +21,7 @@ class UploadImageCommandHandler
             $fullPath = "{$directory}/{$filename}";
 
             Storage::disk('s3')->put($fullPath, file_get_contents($image), 'public');
-            $imageUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $fullPath;
+            $imageUrl = Storage::disk('s3')->url($fullPath);
         }
 
         $image = ImageProfile::create([

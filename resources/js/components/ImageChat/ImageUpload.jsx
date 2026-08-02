@@ -89,10 +89,10 @@ const {
                 document.body.style.backgroundPosition = 'center';
                 document.body.style.backgroundAttachment = 'fixed';
 
-                // Сохраняем в localStorage
+          
                 localStorage.setItem('chatBackground', imageUrl);
 
-                // Вызываем callback для родительского компонента
+               
                 if (onBackgroundSet) {
                     onBackgroundSet(imageUrl);
                 }

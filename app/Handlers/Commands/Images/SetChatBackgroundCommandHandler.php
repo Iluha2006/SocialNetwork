@@ -17,7 +17,7 @@ class SetChatBackgroundCommandHandler
             $image = $command->request->file('chat_background');
             $filename = 'chat_bg_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $path = $image->storeAs("chat-backgrounds/{$user->id}", $filename, 's3');
-            $imageUrl = config('filesystems.disks.s3.url') . '/' . env('AWS_BUCKET') . '/' . $path;
+            $imageUrl = Storage::disk('s3')->url($path);
         }
 
         ImagesBacround::updateOrCreate(

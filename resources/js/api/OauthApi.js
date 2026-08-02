@@ -20,10 +20,9 @@ export const oauthApi = createApi({
             query: (code) => ({
                 url: `/auth/yandex/callback`,
                 method: 'POST',
-                body:{code},
+                body: { code },
                 headers: {
                     'Accept': 'application/json',
-
                 },
             }),
             invalidatesTags: ['Yandex'],
@@ -33,37 +32,53 @@ export const oauthApi = createApi({
                 dispatch(setOAuthProvider('yandex'));
                 dispatch(clearOAuth());
 
+                try {
                     const { data } = await queryFulfilled;
 
-
-
-
-
                     if (data?.success && data?.user) {
-                      
-dispatch(
+                        const user = data.user;
+
+                        dispatch(setOAuthUser({
+                            id: user.id,
+                            name: user.name,
+                            providers: user.providers || [],
+                        }));
+
+                        dispatch(setOAuthData({
+                            provider: 'yandex',
+                            ...data,
+                        }));
+
+                        dispatch(setProfile({
+                            user_id: user.id,
+                            name: user.name,
+                        }));
+
+                        dispatch(
                             profileApi.util.upsertQueryData(
-                                'getProfile', 
-                                user.id, 
+                                'getProfile',
+                                user.id,
                                 { profile: user }
                             )
                         );
 
-
-                           dispatch(
-                          profileApi.util.upsertQueryData('getProfile', user.id, { profile: user })
-                      );
-                      
                         const { getEcho } = await import('../echo');
                         getEcho();
 
-
                         dispatch(
-                            profileApi.endpoints.getProfile.initiate(userData.id, { forceRefetch: true })
+                            profileApi.endpoints.getProfile.initiate(user.id, { forceRefetch: true })
                         );
                     }
-
-
+                } catch (err) {
+                    console.error('Yandex callback error:', err);
+                    dispatch(setOAuthError(
+                        err.error?.data?.message ||
+                        err.message ||
+                        'Ошибка авторизации через Яндекс'
+                    ));
+                } finally {
+                    dispatch(setOAuthLoading(false));
+                }
             },
         }),
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { normalizeMediaUrl, DEFAULT_IMAGE_ERROR, DEFAULT_IMAGE_ERROR_LARGE } from '../../../utils/mediaUrl';
 
 import { fetchUserImages, deleteUserImage } from '../../../store/Files/ImagesStore';
 
@@ -94,11 +95,11 @@ const UserImages = ({userId: users}) => {
               onClick={() => openModal(image, index)}
             >
               <img
-                src={image.path_image}
+                src={normalizeMediaUrl(image.path_image)}
                 alt={`Фото ${index + 1}`}
                 className="h-48 w-auto object-cover rounded-xl transition-transform group-hover:scale-105"
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/200x200?text=Ошибка+загрузки';
+                  e.target.src = DEFAULT_IMAGE_ERROR;
                 }}
               />
 
@@ -129,11 +130,11 @@ const UserImages = ({userId: users}) => {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={selectedImage.path_image}
+              src={normalizeMediaUrl(selectedImage.path_image)}
               alt="Просмотр фото"
               className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/600x400?text=Ошибка+загрузки';
+                e.target.src = DEFAULT_IMAGE_ERROR_LARGE;
               }}
             />
 

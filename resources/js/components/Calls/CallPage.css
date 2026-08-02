@@ -139,11 +139,50 @@
     margin-top: 4px;
 }
 
+
+
 .call-btn-end {
-    background: rgba(244, 67, 54, 0.2);
-    color: #ef5350;
-    width: 88px;
-    padding: 18px 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #ef5350;
+    color: #fff;
+    width: auto;
+    min-width: 140px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(239, 83, 80, 0.35);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+
+.call-btn-end:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 83, 80, 0.45);
+}
+
+
+.call-btn-end:active {
+    transform: scale(0.95);
+}
+
+
+.call-btn-end::before {
+    content: "📞";
+    font-size: 18px;
+}
+
+.call-btn-end svg {
+    transform: rotate(135deg);
 }
 
 .call-btn-end:hover {

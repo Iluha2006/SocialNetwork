@@ -19,12 +19,20 @@ class InitiateCallCommandHandler
     {
         $result = $this->callService->initiateCall($command->request);
 
+        if (isset($result['can_call']) && !$result['can_call']) {
+            return $result;
+        }
+
+        if (!isset($result['call']) || !$result['success']) {
+            throw new \RuntimeException($result['error'] ?? 'Не удалось создать звонок');
+        }
+
         $call = $result['call'];
         $caller = Auth::guard('api')->user() ?? Auth::guard('web')->user();
         $receiver = User::findOrFail($command->request->receiver_id);
 
         broadcast(new IncomingCall($call, $caller));
-        broadcast(new WebRTCOffer($receiver->id, $command->request->sdp_offer, $caller->id));
+        broadcast(new WebRTCOffer($receiver->id, $command->request->sdp_offer, $caller->id, $call->id));
 
         return [
             'call_id' => $call->id,

@@ -11,6 +11,7 @@ import Messenger from '../Pages/Messenger';
 import FriendRequests from '../Pages/FriendRequests';
 import MessageUser from '../Pages/messages/MessageUser';
 import CallPage from '../Pages/calls/CallPage';
+import QuickCall from '../components/Calls/QuickCall';
 import UserPhotos from '../Pages/profile/UserPhotos';
 import ImagesUpload from '../Pages/profile/ImagesUpload';
 import SettingsNavigate from '../Pages/settings/SettingsNavigate';
