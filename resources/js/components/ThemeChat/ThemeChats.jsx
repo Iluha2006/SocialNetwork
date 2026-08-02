@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { chatThemes, DEFAULT_CHAT_THEME, applyChatTheme } from './chatThemes';
 import { initChatTheme, setChatTheme, selectChatTheme } from '../../store/Theme/chatThemeSlice';
+import { normalizeMediaUrl } from '../../utils/mediaUrl';
 import ImageChat from './ImageChat';
 import {
     selectBackgroundByUserId,
@@ -213,9 +214,9 @@ const ThemeChats = ({ onBack }) => {
                             {(Array.isArray(userBackgrounds) ? userBackgrounds : [userBackgrounds]).map((img, i) => (
                                 <img
                                     key={i}
-                                    src={img.path_image || img}
+                                    src={normalizeMediaUrl(img.path_image || img)}
                                     className="w-10 h-10 rounded-md object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => handleBackgroundSet(img.path_image || img)}
+                                    onClick={() => handleBackgroundSet(normalizeMediaUrl(img.path_image || img))}
                                 />
                             ))}
                         </div>

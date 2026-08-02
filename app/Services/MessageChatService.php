@@ -110,6 +110,10 @@ class MessageChatService
     {
         $userId = Auth::id();
 
+        if ((int) $receiverId === (int) $userId) {
+            throw new \RuntimeException('Невозможно отправить сообщение самому себе', 422);
+        }
+
         if ($this->areUsersBlocked($userId, $receiverId)) {
             throw new \RuntimeException('Невозможно отправить сообщение: пользователь заблокирован', 403);
         }

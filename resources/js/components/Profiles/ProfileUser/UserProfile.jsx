@@ -205,12 +205,14 @@ if (profileError) {
                                  className="w-full"
                              />
 
+                             {profile?.user_id !== currentUser?.id && (
                              <MessageButton
                                  recipientId={getUserId()}
                                  recipientName={profile.name}
                                  disabled={isBlocked || hasBlockedThisUser}
                                  className="w-full"
                              />
+                             )}
 
                              <BlockButton
                                  isBlocked={hasBlockedThisUser}

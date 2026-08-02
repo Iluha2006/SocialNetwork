@@ -6,7 +6,7 @@ import { useGetProfileQuery } from '../../../api/modules/profileApi';
 import ErrorProfile from '../../../UI/Profile/ErrorProfile';
 const Profile = () => {
     const authUser = useSelector(state => state.user?.user);
-
+  const { onlineUsers } = useSelector(state => state.online);
     const {
         data: profileResponse,
         isLoading,
@@ -58,7 +58,13 @@ const getUserName = () => {
                 <div className="w-full md:w-auto flex justify-center md:block">
                     <div className="relative inline-block">
                         <Avatar />
-                        <span className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
+
+
+{onlineUsers.some(u => u.id === parseInt(authUser?.id) && u.online_status === 'online') && (
+    <span className="absolute bottom-4 right-4 w-5 h-5 bg-green-500 border-3 border-[rgba(1,14,24,0.946)] rounded-full"></span>
+)}
+                         
+                        
                     </div>
                 </div>
 

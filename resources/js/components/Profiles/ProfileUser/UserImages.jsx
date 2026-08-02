@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserImages } from '../../../store/Files/ImagesStore';
+import { normalizeMediaUrl } from '../../../utils/mediaUrl';
 
 const UserImages = ({ userId, compact = false }) => {
     const dispatch = useDispatch();
@@ -80,7 +81,7 @@ const UserImages = ({ userId, compact = false }) => {
                         {currentUserImages.slice(0, 6).map((image, index) => (
                             <img
                                 key={image.id}
-                                src={image.path_image}
+                                src={normalizeMediaUrl(image.path_image)}
                                 alt={`Фото ${index + 1}`}
                                 className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
                                 onClick={() => openModal(image, index)}
@@ -114,7 +115,7 @@ const UserImages = ({ userId, compact = false }) => {
                                 onClick={() => openModal(image, index)}
                             >
                                 <img
-                                    src={image.path_image}
+                                    src={normalizeMediaUrl(image.path_image)}
                                     alt={`Фото ${index + 1}`}
                                     className="w-full h-full object-cover block"
                                     loading="lazy"
@@ -169,7 +170,7 @@ const UserImages = ({ userId, compact = false }) => {
                         </button>
 
                         <img
-                            src={selectedImage.path_image}
+                            src={normalizeMediaUrl(selectedImage.path_image)}
                             alt="Просмотр фото"
                             className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
                         />
