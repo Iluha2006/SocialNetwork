@@ -2,6 +2,32 @@
 
 Full-stack social network with real-time messaging, audio/video calls, posts, friend system and monitoring.
 
+## Предметная область
+
+Проект представляет собой **полнофункциональную социальную сеть** — платформу для общения, публикации контента и поддержания социальных связей между пользователями. Система охватывает следующие предметные подсистемы:
+
+- **Пользователи и аутентификация** — регистрация с подтверждением e-mail, вход/выход, OAuth-авторизация (Яндекс), отслеживание онлайн-статуса, блокировки.
+- **Профили** — анкеты пользователей: аватар, фотогалерея, биография, карьера (Carer), контакты и настройки приватности (видимость профиля, друзей, изображений).
+- **Социальные связи (Friendship)** — отправка/принятие/отклонение заявок в друзья, списки друзей, проверка статуса дружбы.
+- **Публикации (Posts)** — создание постов с изображениями и видео, лента новостей, лайки, комментарии.
+- **Обмен сообщениями (Messaging)** — личные чаты в реальном времени: текстовые, голосовые (AudioMessage) и файловые сообщения, темы оформления чатов, история переписки.
+- **Аудио- и видеозвонки (WebRTC)** — peer-to-peer звонки с обменом SDP и ICE через WebSocket, история звонков.
+- **Мониторинг** — метрики Prometheus, дашборды Grafana, панель очередей Horizon.
+
+Целевая аудитория — конечные пользователи интернета, желающие общаться, делиться контентом и поддерживать социальные связи в реальном времени. Технически проект реализован по паттерну **CQRS** (см. раздел [Architecture](#architecture)).
+
+## Описание проекта
+
+SocialNetwork — это full-stack приложение, сочетающее:
+
+- **Laravel 11 (PHP 8.4)** бэкенд с архитектурой CQRS: команды/запросы, обработчики, сервисы и репозитории, типобезопасные DTO (Spatie Data).
+- **React 19 (Vite + Redux Toolkit + Tailwind CSS 4)** фронтенд.
+- **Реальное время** на базе Laravel Reverb (WebSocket) и Laravel Echo.
+- **Очереди** через Laravel Horizon (Redis) для обработки медиа, отправки e-mail и broadcast-событий.
+- **Хранение файлов** в S3-совместимом объектном хранилище MinIO.
+- **Мониторинг** через Prometheus, Grafana и Node Exporter.
+- **Деплой** в Docker Compose (12 сервисов) с Nginx.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -134,28 +160,137 @@ SocialNetwork/
 
 ## Getting Started
 
-### Prerequisites
-- Docker & Docker Compose
+Полная инструкция по установке зависимостей, настройке окружения, запуску через Docker, миграциям и наполнению базы данных.
 
-### Launch
+### Требования (Prerequisites)
+
+- **Docker** 24+ и **Docker Compose** v2
+- **Git**
+- Для локальной разработки (вне Docker): **PHP 8.4**, **Composer 2**, **Node.js 22**, **npm**
+
+### Шаг 1. Клонирование репозитория
 
 ```bash
 git clone https://github.com/Iluha2006/SocialNetwork.git
 cd SocialNetwork
+```
+
+### Шаг 2. Конфигурация окружения
+
+```bash
+cp .env.example .env
+```
+
+Заполните в `.env` обязательные переменные:
+
+| Переменная | Описание |
+|-----------|----------|
+| `APP_NAME` | Название приложения |
+| `APP_URL` | Публичный URL приложения |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Параметры подключения к PostgreSQL |
+| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Учётные данные MinIO (S3-хранилище) |
+| `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET` | Ключи WebSocket-сервера Reverb |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET` | Доступ к S3-хранилищу |
+| `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET` | Данные приложения Яндекс OAuth |
+
+> Значения `POSTGRES_*` и `MINIO_ROOT_*` должны совпадать с теми, что задаются в `docker-compose.yml` через `${...}` подстановку из `.env`.
+
+### Шаг 3. Установка зависимостей
+
+> ⚠️ Внутри Docker-контейнеров зависимости устанавливаются автоматически: образ `php` выполняет `composer install --no-dev` на этапе сборки (`Dockerfile`), а контейнер `node` запускает `npm install && npm run build`. Локальная установка нужна только для разработки вне Docker или для `vendor/` на хосте.
+
+```bash
+# PHP-зависимости (Laravel и пакеты)
+composer install
+
+# Фронтенд-зависимости (React, Vite, Tailwind и др.)
+npm install
+```
+
+### Шаг 4. Запуск приложения через Docker
+
+```bash
 docker compose up -d
+```
+
+После запуска всех контейнеров проверьте статус:
+
+```bash
+docker compose ps
+```
+
+Первичная сборка образов может занять несколько минут. Дождитесь, пока сервисы `php`, `nginx`, `postgres`, `redis`, `storage`, `node`, `horizon`, `reverb` перейдут в состояние `running`/`healthy`.
+
+### Шаг 5. Ключ приложения и миграции
+
+```bash
+# Сгенерировать ключ приложения (если APP_KEY пустой)
+docker compose exec php php artisan key:generate
+
+# Применить миграции базы данных
+docker compose exec php php artisan migrate
+
+# Наполнить базу тестовыми данными (пользователи, посты, комментарии) — опционально
+docker compose exec php php artisan db:seed
+```
+
+Отдельные сидеры:
+
+```bash
+docker compose exec php php artisan db:seed --class=RoleSeeder
+docker compose exec php php artisan db:seed --class=UserSeeder
+docker compose exec php php artisan db:seed --class=PostSeeder
+docker compose exec php php artisan db:seed --class=CommentSeeder
+```
+
+### Шаг 6. OAuth-ключи (Laravel Passport)
+
+Авторизация построена на Laravel Passport. При первом запуске сгенерируйте ключи и клиенты:
+
+```bash
+docker compose exec php php artisan passport:install
+```
+
+### Шаг 7. Сборка фронтенда
+
+Контейнер `node` автоматически выполняет `npm install && npm run build` при старте. Для режима разработки с горячей перезагрузкой запустите Vite на хосте:
+
+```bash
+npm run dev
+```
+
+### Проверка работоспособности
+
+1. Откройте приложение в браузере: http://localhost (или http://localhost:8088, если вы изменили маппинг портов)
+2. Проверьте сервисы из таблицы ниже
+3. Зарегистрируйте нового пользователя через `/auth/register`
+
+### Сброс и перезапуск
+
+```bash
+# Остановить все сервисы
+docker compose down
+
+# Полный сброс (удаление томов БД, MinIO, Grafana)
+docker compose down -v
+
+# Пересобрать образы с нуля
+docker compose up -d --build
 ```
 
 ### Available Services
 
 | Service | URL |
 |---------|-----|
-| Application | http://localhost:8088 |
-| Frontend (Vite) | http://localhost:5173 |
-| Horizon Dashboard | http://localhost:8088/horizon |
+| Application | http://localhost |
+| Frontend (Vite dev) | http://localhost:5173 |
+| Horizon Dashboard | http://localhost/horizon |
 | MinIO Console | http://localhost:9001 |
 | Grafana | http://localhost:3000 |
 | Prometheus | http://localhost:9091 |
 | Reverb WebSocket | http://localhost:6001 |
+
+> Приложение доступно на порту 80/443 (`docker-compose.yml` маппит `nginx` на `0.0.0.0:80:80`). Если порт 80 занят, измените маппинг в `docker-compose.yml`, например `"8088:80"`.
 
 
 
@@ -348,18 +483,18 @@ Managed by Laravel Horizon (queues: `default`, `media`, `broadcast`):
 
 ```yaml
 services:
-  php        # PHP 8.4 FPM (port 9000)
-  nginx      # Reverse proxy (ports 8088/8077)
-  postgres   # PostgreSQL 16 (port 5433)
-  redis      # Redis 7
-  storage    # MinIO S3 (ports 9000/9001)
-  node       # Vite dev server (port 5173)
-  horizon    # Queue worker + dashboard
-  reverb     # WebSocket server (port 6001)
-  cloudflared # Cloudflare tunnel
-  prometheus  # Metrics collection (port 9091)
-  grafana     # Dashboards (port 3000)
+  php          # PHP 8.4 FPM (internal port 9000)
+  nginx        # Reverse proxy (ports 80/443)
+  postgres     # PostgreSQL 16 (port 5433)
+  redis        # Redis 7 (port 6380)
+  storage      # MinIO S3 (ports 9000/9001)
+  minio-init   # One-time bucket initialization (social-media)
+  node         # Vite build + dev server (port 5173)
+  horizon      # Queue worker + dashboard
+  reverb       # WebSocket server (port 6001)
   node-exporter # System metrics (port 9102)
+  prometheus   # Metrics collection (port 9091)
+  grafana      # Dashboards (port 3000)
 ```
 
 ## Development
@@ -372,14 +507,54 @@ docker compose up -d
 docker compose logs -f horizon
 docker compose logs -f reverb
 
-# Run migrations
-docker exec laravel_php php artisan migrate
+# Run migrations (inside the php container)
+docker compose exec php php artisan migrate
+
+# Rollback migrations
+docker compose exec php php artisan migrate:rollback
+
+# Refresh migrations and seed
+docker compose exec php php artisan migrate:fresh --seed
+
+# Generate OAuth keys
+docker compose exec php php artisan passport:install
+
+# Run tests
+docker compose exec php php artisan test
 
 # Horizon dashboard
-open http://localhost:8088/horizon
+open http://localhost/horizon
 
 # Grafana dashboard
 open http://localhost:3000
+```
+
+## Production Deployment
+
+Для продакшена используется отдельный файл `docker-compose.prod.yml` с исходным кодом, "запечённым" в образы (без bind-mounts). Миграции выполняются автоматически при старте контейнера `php`.
+
+```bash
+cp .env.prod.example .env.prod   # заполните реальные значения
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+```
+
+Особенности прод-конфигурации:
+
+| Особенность | Описание |
+|------------|----------|
+| Автомиграции | `php artisan migrate --force` выполняется при старте контейнера `php` |
+| `scheduler` | Сервис `php artisan schedule:work` для планировщика |
+| Кэширование | `php artisan optimize` (config/route/view cache) |
+| Безопасность | Наружу открыты только `nginx` (80/443) и `reverb` (6001); Postgres, Redis, MinIO — внутри сети Docker |
+| Мониторинг | Prometheus/Grafana/node-exporter закомментированы — раскомментируйте при необходимости |
+
+Полезные прод-команды:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml ps
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f php
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec php php artisan migrate --force
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec php php artisan db:seed
 ```
 
 
