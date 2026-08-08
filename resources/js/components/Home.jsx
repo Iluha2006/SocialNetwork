@@ -85,13 +85,13 @@ const Home = () => {
       <div className="
         flex-1
         ml-0
-        md:ml-60
-        lg:ml-64
+        md:ml-4
+        lg:ml-6
         p-4
         sm:p-5
         md:p-6
         w-full
-        md:w-[calc(100%-16rem)]
+        min-w-0
         flex
         flex-col
         items-center

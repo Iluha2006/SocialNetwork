@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('city')->nullable();
             $table->string('place_work')->nullable();
-            $table->string('work_experience')->nullable();
-            $table->string('skills_work')->nullable();
+            $table->text('work_experience')->nullable();
+            $table->text('skills_work')->nullable();
             $table->string('position')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('profile_id')->nullable()->constrained();

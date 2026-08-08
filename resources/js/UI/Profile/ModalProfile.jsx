@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import ThemeToggle from '../../components/ThemeSocialNetwork/ThemeToggle';
 import { useGetProfileQuery } from '../../api/modules/profileApi';
-import { normalizeMediaUrl } from '../../utils/mediaUrl';
+import { DEFAULT_AVATAR, normalizeMediaUrl } from '../../utils/mediaUrl';
 
 export default function ModalProfile({
   isOpen,
@@ -93,21 +93,15 @@ export default function ModalProfile({
         </div>
 
         <div className="flex items-center px-5 py-4 border-b border-gray-700">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              className="w-12 h-12 rounded-full object-cover mr-3"
-              alt="Аватар"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full mr-3">
-              <img
-                src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E"
-                alt="Аватар по умолчанию"
-                className="w-full h-full rounded-full object-cover"
-              />
-            </div>
-          )}
+          <img
+            src={avatarUrl || DEFAULT_AVATAR}
+            onError={(e) => {
+              if (e.target.src === DEFAULT_AVATAR) return;
+              e.target.src = DEFAULT_AVATAR;
+            }}
+            className="w-12 h-12 rounded-full object-cover mr-3"
+            alt="Аватар"
+          />
           <div className="flex flex-col">
             <span className="font-semibold text-base text-amber-50 mb-1">
               {userName}

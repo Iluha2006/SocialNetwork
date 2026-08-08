@@ -1,5 +1,5 @@
 import React from 'react';
-import { normalizeMediaUrl } from '../../utils/mediaUrl';
+import { normalizeMediaUrl, DEFAULT_AVATAR } from '../../utils/mediaUrl';
 
 const ModalFriends = ({ isOpen, onClose, friends, onViewProfile }) => {
     if (!isOpen) return null;
@@ -9,8 +9,6 @@ const ModalFriends = ({ isOpen, onClose, friends, onViewProfile }) => {
             onClose();
         }
     };
-
-    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E';
 
     return (
         <div
@@ -46,11 +44,15 @@ const ModalFriends = ({ isOpen, onClose, friends, onViewProfile }) => {
                                 title={friend.name}
                             >
                                 <img
-                                    src={normalizeMediaUrl(friend.avatar) || defaultAvatar}
+                                    src={normalizeMediaUrl(friend.avatar) || DEFAULT_AVATAR}
                                     alt={friend.name}
                                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover mb-2 border-2 border-transparent transition-colors hover:border-blue-500"
+                                    onError={(e) => {
+                                        if (e.target.src === DEFAULT_AVATAR) return;
+                                        e.target.src = DEFAULT_AVATAR;
+                                    }}
                                 />
-                                <span className="text-xs text-gray-200 text-center w-full truncate">
+                                <span className="text-xs text-gray-200 text-center w-full px-1 break-words">
                                     {friend.name}
                                 </span>
                             </div>

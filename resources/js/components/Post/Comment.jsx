@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, useEffect, memo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
@@ -71,7 +71,7 @@ const CommentItem = memo(({ comment, currentUserId, isDeleting, onDelete, onView
     );
 });
 
-const Comments = memo(({ postId }) => {
+const Comments = memo(({ postId, onCountChange }) => {
     const [commentText, setCommentText] = useState('');
     const navigate = useNavigate();
 
@@ -89,6 +89,12 @@ const Comments = memo(({ postId }) => {
     const [deleteComment, { isLoading: isDeleting }] = useDeleteCommentMutation();
 
     const postComments = commentsData?.comments || [];
+
+    useEffect(() => {
+        if (!commentsLoading && onCountChange) {
+            onCountChange(postComments.length);
+        }
+    }, [postComments.length, commentsLoading, onCountChange]);
 
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();

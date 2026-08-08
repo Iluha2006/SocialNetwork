@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
     fetchCarers,
     createCarer,
     updateCarerById,
-    clearMessages
-} from '../../../store/settings/Carer';
-import cities from '../ContactProfile/city';
+    clearMessages,
+} from "../../../store/settings/Carer";
+import cities from "../ContactProfile/city";
 
 const CarerProfile = () => {
     const dispatch = useDispatch();
-    const { carers, loading, error, successMessage } = useSelector(state => state.carer);
-    const user = useSelector(state => state.user.user);
+    const { carers, loading, error, successMessage } = useSelector(
+        (state) => state.carer,
+    );
+    const user = useSelector((state) => state.user.user);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
-        city: '',
-        place_work: '',
-        work_experience: '',
-        skills_work: '',
-        position: ''
+        city: "",
+        place_work: "",
+        work_experience: "",
+        skills_work: "",
+        position: "",
     });
     const [citySuggestions, setCitySuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -42,17 +44,22 @@ const CarerProfile = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
         }));
 
-        if (name === 'city') {
+        if (name === "city") {
             if (value.length > 1) {
-                const filteredCities = cities.filter(city =>
-                    city.name.toLowerCase().includes(value.toLowerCase()) ||
-                    city.region.toLowerCase().includes(value.toLowerCase()) ||
-                    city.country.toLowerCase().includes(value.toLowerCase())
+                const filteredCities = cities.filter(
+                    (city) =>
+                        city.name.toLowerCase().includes(value.toLowerCase()) ||
+                        city.region
+                            .toLowerCase()
+                            .includes(value.toLowerCase()) ||
+                        city.country
+                            .toLowerCase()
+                            .includes(value.toLowerCase()),
                 );
                 setCitySuggestions(filteredCities.slice(0, 5));
                 setShowSuggestions(true);
@@ -64,9 +71,9 @@ const CarerProfile = () => {
     };
 
     const selectCity = (city) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            city: `${city.name}, ${city.region}`
+            city: `${city.name}, ${city.region}`,
         }));
         setShowSuggestions(false);
         setCitySuggestions([]);
@@ -82,17 +89,17 @@ const CarerProfile = () => {
             }
             resetForm();
         } catch (error) {
-            console.error('Error saving carer:', error);
+            console.error("Error saving carer:", error);
         }
     };
 
     const handleEdit = (carer) => {
         setFormData({
-            city: carer.city || '',
-            place_work: carer.place_work || '',
-            work_experience: carer.work_experience || '',
-            skills_work: carer.skills_work || '',
-            position: carer.position || ''
+            city: carer.city || "",
+            place_work: carer.place_work || "",
+            work_experience: carer.work_experience || "",
+            skills_work: carer.skills_work || "",
+            position: carer.position || "",
         });
         setEditingId(carer.id);
         setIsEditing(true);
@@ -106,11 +113,11 @@ const CarerProfile = () => {
 
     const resetForm = () => {
         setFormData({
-            city: '',
-            place_work: '',
-            work_experience: '',
-            skills_work: '',
-            position: ''
+            city: "",
+            place_work: "",
+            work_experience: "",
+            skills_work: "",
+            position: "",
         });
         setEditingId(null);
         setIsEditing(false);
@@ -125,7 +132,8 @@ const CarerProfile = () => {
 
     if (loading && carers.length === 0) {
         return (
-            <div className="
+            <div
+                className="
                  max-w-34
                 sm:max-w-4xl
                 mx-auto
@@ -136,16 +144,20 @@ const CarerProfile = () => {
                 bg-[rgba(1,14,24,0.946)]
                 my-4
                 md:my-8
-            ">
-                <div className="
+            "
+            >
+                <div
+                    className="
                     flex
                     items-center
                     justify-center
                     gap-3
                     py-20
                     text-white/70
-                ">
-                    <div className="
+                "
+                >
+                    <div
+                        className="
                         w-6
                         h-6
                         border-2
@@ -153,7 +165,8 @@ const CarerProfile = () => {
                         border-t-white
                         rounded-full
                         animate-spin
-                    "></div>
+                    "
+                    ></div>
                     <span className="text-lg">Загрузка опыта работы...</span>
                 </div>
             </div>
@@ -161,9 +174,12 @@ const CarerProfile = () => {
     }
 
     return (
-        <div className="
+        <div
+            className="
            max-w-96
            sm:max-w-4xl
+           lg:max-w-5xl
+           xl:max-w-6xl
             mx-auto
             p-6
             md:p-8
@@ -172,37 +188,43 @@ const CarerProfile = () => {
             bg-[rgba(1,14,24,0.946)]
             my-4
             md:my-8
-        ">
-
-            <div className="
+        "
+        >
+            <div
+                className="
                 text-center
                 mb-8
                 md:mb-10
                 pb-6
                 border-b
                 border-white/10
-            ">
-                <h2 className="
+            "
+            >
+                <h2
+                    className="
                     text-2xl
                     md:text-3xl
                     font-semibold
                     text-white
                     mb-3
-                ">
+                "
+                >
                     Опыт работы
                 </h2>
-                <p className="
+                <p
+                    className="
                     text-white/80
                     text-base
                     md:text-lg
-                ">
+                "
+                >
                     Управление вашим профессиональным опытом
                 </p>
             </div>
 
-
             {error && (
-                <div className="
+                <div
+                    className="
                     mb-6
                     p-4
                     bg-red-500/10
@@ -212,13 +234,15 @@ const CarerProfile = () => {
                     rounded-r-lg
                     animate-in
                     fade-in-0
-                ">
+                "
+                >
                     {error}
                 </div>
             )}
 
             {successMessage && (
-                <div className="
+                <div
+                    className="
                     mb-6
                     p-4
                     bg-green-500/10
@@ -228,11 +252,11 @@ const CarerProfile = () => {
                     rounded-r-lg
                     animate-in
                     fade-in-0
-                ">
+                "
+                >
                     {successMessage}
                 </div>
             )}
-
 
             <div className="mb-8">
                 {!isEditing && (
@@ -265,11 +289,12 @@ const CarerProfile = () => {
                 )}
             </div>
 
-
             {isEditing && (
                 <form
                     onSubmit={handleSubmit}
                     className="
+                        w-full
+                        max-w-[400px]
                         mb-8
                         p-6
                         md:p-8
@@ -284,14 +309,15 @@ const CarerProfile = () => {
                     "
                 >
                     <div className="space-y-6">
-
                         <div>
-                            <label className="
+                            <label
+                                className="
                                 block
                                 mb-2
                                 font-medium
                                 text-white
-                            ">
+                            "
+                            >
                                 Город *
                             </label>
                             <div className="relative">
@@ -320,8 +346,10 @@ const CarerProfile = () => {
                                     "
                                     required
                                 />
-                                {showSuggestions && citySuggestions.length > 0 && (
-                                    <div className="
+                                {showSuggestions &&
+                                    citySuggestions.length > 0 && (
+                                        <div
+                                            className="
                                         absolute
                                         top-full
                                         left-0
@@ -338,11 +366,13 @@ const CarerProfile = () => {
                                         animate-in
                                         fade-in-0
                                         zoom-in-95
-                                    ">
-                                        {citySuggestions.map((city, index) => (
-                                            <div
-                                                key={index}
-                                                className="
+                                    "
+                                        >
+                                            {citySuggestions.map(
+                                                (city, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="
                                                     p-3
                                                     cursor-pointer
                                                     border-b
@@ -352,36 +382,44 @@ const CarerProfile = () => {
                                                     duration-150
                                                     last:border-b-0
                                                 "
-                                                onClick={() => selectCity(city)}
-                                            >
-                                                <div className="
+                                                        onClick={() =>
+                                                            selectCity(city)
+                                                        }
+                                                    >
+                                                        <div
+                                                            className="
                                                     font-medium
                                                     text-white
                                                     mb-1
-                                                ">
-                                                    {city.name}
-                                                </div>
-                                                <div className="
+                                                "
+                                                        >
+                                                            {city.name}
+                                                        </div>
+                                                        <div
+                                                            className="
                                                     text-sm
                                                     text-white/70
-                                                ">
-                                                    {city.region}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                                "
+                                                        >
+                                                            {city.region}
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
                             </div>
                         </div>
 
-
                         <div>
-                            <label className="
+                            <label
+                                className="
                                 block
                                 mb-2
                                 font-medium
                                 text-white
-                            ">
+                            "
+                            >
                                 Место работы *
                             </label>
                             <input
@@ -411,15 +449,16 @@ const CarerProfile = () => {
                             />
                         </div>
 
-
                         <div>
-                            <label className="
+                            <label
+                                className="
                                 block
                                 mb-2
                                 font-medium
                                 text-white
-                            ">
-                               Должность
+                            "
+                            >
+                                Должность
                             </label>
                             <input
                                 type="text"
@@ -449,12 +488,14 @@ const CarerProfile = () => {
                         </div>
 
                         <div>
-                            <label className="
+                            <label
+                                className="
                                 block
                                 mb-2
                                 font-medium
                                 text-white
-                            ">
+                            "
+                            >
                                 Опыт работы
                             </label>
                             <textarea
@@ -485,14 +526,15 @@ const CarerProfile = () => {
                             />
                         </div>
 
-
                         <div>
-                            <label className="
+                            <label
+                                className="
                                 block
                                 mb-2
                                 font-medium
                                 text-white
-                            ">
+                            "
+                            >
                                 Навыки и умения
                             </label>
                             <textarea
@@ -524,14 +566,15 @@ const CarerProfile = () => {
                         </div>
                     </div>
 
-
-                    <div className="
+                    <div
+                        className="
                         mt-8
                         flex
                         flex-col
                         sm:flex-row
                         gap-3
-                    ">
+                    "
+                    >
                         <button
                             type="submit"
                             disabled={loading}
@@ -559,7 +602,11 @@ const CarerProfile = () => {
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                     Сохранение...
                                 </span>
-                            ) : editingId ? 'Обновить запись' : 'Сохранить запись'}
+                            ) : editingId ? (
+                                "Обновить запись"
+                            ) : (
+                                "Сохранить запись"
+                            )}
                         </button>
 
                         <button
@@ -590,13 +637,12 @@ const CarerProfile = () => {
                 </form>
             )}
 
-
             <div className="space-y-4">
-                {carers.length > 0 ? (
-                    carers.map((carer) => (
-                        <div
-                            key={carer.id}
-                            className="
+                {carers.length > 0
+                    ? carers.map((carer) => (
+                          <div
+                              key={carer.id}
+                              className="
                                 p-6
                                 bg-white/5
                                 backdrop-blur-sm
@@ -611,66 +657,92 @@ const CarerProfile = () => {
                                 animate-in
                                 fade-in-0
                             "
-                        >
-                            <div className="
+                          >
+                              <div
+                                  className="
                                 flex
                                 flex-col
                                 md:flex-row
                                 md:items-start
                                 justify-between
                                 gap-4
-                            ">
-                                {/* Информация */}
-                                <div className="flex-1">
-                                    <div className="mb-4">
-                                        <h3 className="
+                            "
+                              >
+                                  {/* Информация */}
+                                  <div className="flex-1">
+                                      <div className="mb-4">
+                                          <h3
+                                              className="
                                             text-xl
                                             font-semibold
                                             text-white
                                             mb-2
-                                        ">
-                                            {carer.position || 'Должность не указана'}
-                                        </h3>
+                                        "
+                                          >
+                                              {carer.position ||
+                                                  "Должность не указана"}
+                                          </h3>
 
-                                        <div className="space-y-2">
-                                            <p className="text-white/80">
-                                                <span className="font-medium text-white/90">Место работы:</span>{' '}
-                                                <span className="text-white/70">{carer.place_work || 'Не указано'}</span>
-                                            </p>
+                                          <div className="space-y-2">
+                                              <p className="text-white/80">
+                                                  <span className="font-medium text-white/90">
+                                                      Место работы:
+                                                  </span>{" "}
+                                                  <span className="text-white/70">
+                                                      {carer.place_work ||
+                                                          "Не указано"}
+                                                  </span>
+                                              </p>
 
-                                            <p className="text-white/80">
-                                                <span className="font-medium text-white/90">Город:</span>{' '}
-                                                <span className="text-white/70">{carer.city || 'Не указан'}</span>
-                                            </p>
+                                              <p className="text-white/80">
+                                                  <span className="font-medium text-white/90">
+                                                      Город:
+                                                  </span>{" "}
+                                                  <span className="text-white/70">
+                                                      {carer.city ||
+                                                          "Не указан"}
+                                                  </span>
+                                              </p>
 
-                                            {carer.work_experience && (
-                                                <div>
-                                                    <p className="font-medium text-white/90 mb-1">Опыт и обязанности:</p>
-                                                    <p className="text-white/70">{carer.work_experience}</p>
-                                                </div>
-                                            )}
+                                              {carer.work_experience && (
+                                                  <div>
+                                                      <p className="font-medium text-white/90 mb-1">
+                                                          Опыт и обязанности:
+                                                      </p>
+                                                      <p className="text-white/70">
+                                                          {
+                                                              carer.work_experience
+                                                          }
+                                                      </p>
+                                                  </div>
+                                              )}
 
-                                            {carer.skills_work && (
-                                                <div>
-                                                    <p className="font-medium text-white/90 mb-1">Ключевые навыки:</p>
-                                                    <p className="text-white/70">{carer.skills_work}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                              {carer.skills_work && (
+                                                  <div>
+                                                      <p className="font-medium text-white/90 mb-1">
+                                                          Ключевые навыки:
+                                                      </p>
+                                                      <p className="text-white/70">
+                                                          {carer.skills_work}
+                                                      </p>
+                                                  </div>
+                                              )}
+                                          </div>
+                                      </div>
+                                  </div>
 
-
-                                <div className="
+                                  <div
+                                      className="
                                     flex
                                     gap-2
                                     md:flex-col
                                     md:gap-3
-                                ">
-                                    <button
-                                        onClick={() => handleEdit(carer)}
-                                        disabled={loading}
-                                        className="
+                                "
+                                  >
+                                      <button
+                                          onClick={() => handleEdit(carer)}
+                                          disabled={loading}
+                                          className="
                                             px-4
                                             py-2
                                             bg-blue-500/20
@@ -687,15 +759,16 @@ const CarerProfile = () => {
                                             disabled:active:scale-100
                                             whitespace-nowrap
                                         "
-                                    >
-                                        Изменить
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : !isEditing && (
-                    <div className="
+                                      >
+                                          Изменить
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      ))
+                    : !isEditing && (
+                          <div
+                              className="
                         p-8
                         text-center
                         bg-white/5
@@ -705,22 +778,28 @@ const CarerProfile = () => {
                         border-white/10
                         animate-in
                         fade-in-0
-                    ">
-                        <p className="
+                    "
+                          >
+                              <p
+                                  className="
                             text-lg
                             text-white/70
                             mb-2
-                        ">
-                            Опыт работы не добавлен
-                        </p>
-                        <p className="
+                        "
+                              >
+                                  Опыт работы не добавлен
+                              </p>
+                              <p
+                                  className="
                             text-sm
                             text-white/50
-                        ">
-                            Нажмите "Добавить опыт работы" чтобы создать первую запись
-                        </p>
-                    </div>
-                )}
+                        "
+                              >
+                                  Нажмите "Добавить опыт работы" чтобы создать
+                                  первую запись
+                              </p>
+                          </div>
+                      )}
             </div>
         </div>
     );

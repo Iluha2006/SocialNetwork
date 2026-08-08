@@ -87,7 +87,7 @@ const UserImages = ({userId: users}) => {
           <p>У вас пока нет фотографий</p>
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-2 w-full">
+        <div className="flex gap-4 overflow-x-auto pb-2 w-full photos-scrollbar">
           {images.map((image, index) => (
             <div
               key={image.id}
@@ -97,7 +97,7 @@ const UserImages = ({userId: users}) => {
               <img
                 src={normalizeMediaUrl(image.path_image)}
                 alt={`Фото ${index + 1}`}
-                className="h-48 w-auto object-cover rounded-xl transition-transform group-hover:scale-105"
+                className="h-48 w-full object-contain rounded-xl transition-transform group-hover:scale-105 bg-black/40"
                 onError={(e) => {
                   e.target.src = DEFAULT_IMAGE_ERROR;
                 }}

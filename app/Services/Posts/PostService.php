@@ -29,6 +29,7 @@ class PostService
             ttl: self::POSTS_ALL_TTL,
             callback: fn () => Post::select(['id', 'title', 'content', 'images', 'videos', 'user_id', 'likes_count', 'created_at'])
                 ->with('user.profile:user_id,name,avatar,bio,id')
+                ->withCount('comments')
                 ->latest('created_at')
                 ->limit(50)
                 ->get()
@@ -49,6 +50,7 @@ class PostService
             ttl: self::POSTS_USER_TTL,
             callback: fn () => Post::select(['id', 'title', 'content', 'images', 'videos', 'user_id', 'likes_count', 'created_at'])
                 ->with('user.profile:user_id,name,avatar,bio,id')
+                ->withCount('comments')
                 ->where('user_id', $userId)
                 ->latest('created_at')
                 ->limit(50)

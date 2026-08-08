@@ -31,7 +31,7 @@ const AppLayout = () => {
           onToggle={() => setIsMenuOpen(!isMenuOpen)}
         />
       )}
-      <div className={`flex-1 w-full flex flex-col items-center overflow-y-auto min-h-screen p-0 md:p-6 ${hideSidebar ? '' : 'ml-0 md:ml-60 lg:ml-64 md:w-[calc(100%-16rem)]'}`}>
+      <div className={`flex-1 w-full min-w-0 flex flex-col items-center overflow-y-auto min-h-screen p-0 md:p-6 ${hideSidebar ? '' : 'ml-0 md:ml-4 lg:ml-6'}`}>
         <Outlet />
       </div>
     </div>

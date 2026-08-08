@@ -1,31 +1,36 @@
 
-FROM php:8.4-fpm
+# Multi-stage production image for the Laravel app (php-fpm).
+# Used by: php, horizon, reverb, scheduler in docker-compose.prod.yml
 
+FROM composer:latest AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock* ./
+RUN composer install \
+        --no-dev \
+        --no-scripts \
+        --no-autoloader \
+        --ignore-platform-reqs
+
+
+FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    vim \
-    nano \
-    
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
     libwebp-dev \
-   
     libpq-dev \
-    
     libzip-dev \
-    
     libonig-dev \
     libxml2-dev \
-
     zip \
     unzip \
     procps \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
 
 RUN docker-php-ext-configure gd \
         --with-freetype \
@@ -44,25 +49,22 @@ RUN docker-php-ext-configure gd \
 # Upload limits (aligned with backend image validation)
 COPY docker/8.4/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-
 WORKDIR /var/www/html
 
-
-COPY composer.json composer.lock* ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
-
-
+COPY --from=vendor /app/vendor /var/www/html/vendor
 COPY . .
-
 
 RUN mkdir -p \
         storage/framework/{sessions,views,cache} \
         storage/logs \
         storage/app/public \
         bootstrap/cache \
+    && composer dump-autoload \
+        --no-dev \
+        --optimize \
+        --classmap-authoritative \
+        --no-interaction \
+    && php artisan package:discover --ansi \
     && chown -R www-data:www-data \
         storage \
         bootstrap/cache \
@@ -70,6 +72,7 @@ RUN mkdir -p \
         storage \
         bootstrap/cache
 
+ENV APP_ENV=production
 
 EXPOSE 9000
 

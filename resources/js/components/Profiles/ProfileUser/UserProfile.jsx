@@ -19,7 +19,7 @@ import PrivateProfileView from '../../../UI/States/UserProfile/PrivateProfileVie
 import UserImages from './UserImages';
 import { useGetProfileQuery, useBlockUserMutation, useUnblockUserMutation } from '../../../api/modules/profileApi';
 import { setViewedProfile, setIsBlocked, setHasBlockedThisUser } from '../../../store/settings/Profile';
-import { normalizeMediaUrl } from '../../../utils/mediaUrl';
+import { normalizeMediaUrl, DEFAULT_AVATAR } from '../../../utils/mediaUrl';
 import ProfileDetail from '../../SettingsProfile/ModalDetail/ProfileDetail';
 import FriendButton from '../../../UI/Button/UserProfile/FriendButton';
 import MessageButton from '../../../UI/Button/UserProfile/MessageButton';
@@ -163,7 +163,11 @@ if (profileError) {
 
                         <div className="flex justify-center md:justify-start relative">
                             <img
-                                src={normalizeMediaUrl(profile?.avatar) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
+                                src={normalizeMediaUrl(profile?.avatar) || DEFAULT_AVATAR}
+                                onError={(e) => {
+                                    if (e.target.src === DEFAULT_AVATAR) return;
+                                    e.target.src = DEFAULT_AVATAR;
+                                }}
                                 className="w-48 h-48 md:w-52 md:h-52 lg:w-56 lg:h-56 rounded-full object-cover border-4 border-white shadow-lg ring-3 ring-blue-500"
                                 alt="Аватар профиля"
                             />
@@ -283,11 +287,15 @@ if (profileError) {
                                         title={friend.name}
                                     >
                                         <img
-                                            src={normalizeMediaUrl(friend.avatar) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%22 y=%2258%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E'}
+                                            src={normalizeMediaUrl(friend.avatar) || DEFAULT_AVATAR}
                                             alt={friend.name}
                                             className="w-16 h-16 md:w-18 md:h-18 rounded-full object-cover border-2 border-gray-200 mb-1.5"
+                                            onError={(e) => {
+                                                if (e.target.src === DEFAULT_AVATAR) return;
+                                                e.target.src = DEFAULT_AVATAR;
+                                            }}
                                         />
-                                        <span className="text-xs text-blue-700 font-medium leading-tight max-w-16 truncate">
+                                        <span className="text-xs text-blue-700 font-medium leading-tight w-full px-1 break-words text-center">
                                             {friend.name}
                                         </span>
                                     </div>

@@ -224,7 +224,10 @@ const ChatList = memo(() => {
                     chats.map((chat) => {
                         const otherUserProfile = profileMap.get(chat.id);
                         const isOnline = onlineSet.has(chat.id);
-                        const lastMessageText = chat.last_message?.content || 'Нет сообщений';
+                        const lastMessageText = chat.last_message
+                            ? (chat.last_message.content ||
+                                (chat.last_message.images ? 'Фото' : (chat.last_message.file ? 'Файл' : 'Нет сообщений')))
+                            : 'Нет сообщений';
                         const lastMessageTime = chat.last_message?.created_at || null;
 
                         return (

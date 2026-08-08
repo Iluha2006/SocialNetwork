@@ -23,8 +23,8 @@ const ImagesUpload = () => {
             }
 
 
-            if (file.size > 2 * 1024 * 1024) {
-                setError('Размер файла не должен превышать 2MB');
+            if (file.size > 10 * 1024 * 1024) {
+                setError('Размер файла не должен превышать 10MB');
                 return;
             }
 
@@ -98,7 +98,6 @@ const ImagesUpload = () => {
         } else {
             setError('Ошибка загрузки изображения');
         }
-         setError('Ошибка загрузки изображения');
     
     } finally {
         setLoading(false);

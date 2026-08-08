@@ -17,5 +17,6 @@ class PostData extends Data
         public readonly ?ProfileData $profile = null,
         public readonly ?bool $is_liked = null,
         public readonly int $likes_count = 0,
+        public readonly int $comments_count = 0,
     ) {}
 }

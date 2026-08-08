@@ -70,7 +70,7 @@ const ProfileDetail = (props) => {
               </button>
             </div>
 
-            <div className="p-6 space-y-8">
+            <div className="p-6 space-y-8 h-[400px] overflow-y-auto">
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-white">Контактная информация</h3>
                 {hasContacts ? (

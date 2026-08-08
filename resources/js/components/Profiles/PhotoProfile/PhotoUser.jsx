@@ -87,7 +87,7 @@ const UserPhotos = () => {
             <img
               src={normalizeMediaUrl(image.path_image)}
               alt={`Фото ${index + 1}`}
-              className=" h-48 object-cover"
+              className="w-full h-48 object-contain bg-black/40"
               onError={(e) => {
                 e.target.src = DEFAULT_IMAGE_ERROR;
               }}

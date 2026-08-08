@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import Comments from './Comment';
@@ -38,6 +38,11 @@ const PostCard = memo(({ post, isExpanded, onToggleComments, onImageClick }) => 
     const userName = getProfileName(post);
     const userAvatar = getProfileAvatar(post);
     const postUserId = getPostUserId(post);
+    const [commentCount, setCommentCount] = useState(post.comments_count ?? 0);
+
+    useEffect(() => {
+        setCommentCount(post.comments_count ?? 0);
+    }, [post.comments_count]);
 
     return (
         <div className="w-full bg-[rgba(1,14,24,0.946)] rounded-lg shadow-md overflow-hidden min-h-[400px] sm:min-h-[300px]">
@@ -73,7 +78,7 @@ const PostCard = memo(({ post, isExpanded, onToggleComments, onImageClick }) => 
                 <img
                     src={normalizeMediaUrl(post.images)}
                     alt={post.title || 'Post image'}
-                    className="w-full h-[400px] sm:h-[600px] object-cover cursor-pointer"
+                    className="w-full h-[300px] sm:h-[400px] object-cover cursor-pointer"
                     onClick={() => onImageClick(normalizeMediaUrl(post.images))}
                     onError={handleImageError}
                 />
@@ -83,7 +88,7 @@ const PostCard = memo(({ post, isExpanded, onToggleComments, onImageClick }) => 
                 <div className="w-full max-w-full my-2">
                     <video
                         controls
-                        className="w-full h-[400px] sm:h-[500px] rounded-lg bg-black"
+                        className="w-full h-[300px] sm:h-[400px] rounded-lg bg-black"
                         poster={normalizeMediaUrl(post.images) || ''}
                     >
                         <source src={normalizeMediaUrl(post.videos)} type="video/mp4" />
@@ -117,12 +122,15 @@ const PostCard = memo(({ post, isExpanded, onToggleComments, onImageClick }) => 
                         <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0m4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
                         <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9 9 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.4 10.4 0 0 1-.524 2.318l-.003.011a11 11 0 0 1-.244.637c-.079.186.074.394.273.362a22 22 0 0 0 .693-.125m.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6-3.004 6-7 6a8 8 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a11 11 0 0 0 .398-2" />
                     </svg>
-                    Комментарии
+                    <span>Комментарии</span>
+                    <span className="min-w-6 h-6 px-1.5 flex items-center justify-center rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold">
+                        {commentCount}
+                    </span>
                 </button>
             </div>
 
             {isExpanded && (
-                <Comments postId={post.id} />
+                <Comments postId={post.id} onCountChange={setCommentCount} />
             )}
         </div>
     );
